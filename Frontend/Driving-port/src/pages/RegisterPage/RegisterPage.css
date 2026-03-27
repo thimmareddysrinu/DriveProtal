@@ -1,0 +1,39 @@
+
+
+.register-card {
+  width: 380px;
+
+  background: rgba(255, 255, 255, 0.05); /* transparent glass */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+.form-control {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+}
+
+.form-control::placeholder {
+  color: #aaa;
+}
+
+
+
+
+/* Role Dropdown */
+
+.role-select:focus {
+  border-color: #F6AF12;
+  background-color: rgba(246,175,18,0.05);
+}
+.role-select option { background: #1A1A2E; color: #fff; }
+
+/* Error */
+.error { color: #EF4444; font-size: 0.8rem; margin-top: 2px; }

@@ -1,0 +1,2 @@
+
+npm install bootstrap react-bootstrap react-router-dom leaflet react-leaflet leaflet-routing-machine socket.io-client @tanstack/react-query @reduxjs/toolkit react-redux zustand axios react-hook-form yup @hookform/resolvers react-icons lucide-react @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons @fortawesome/fontawesome-svg-core react-hot-toast framer-motion geolib jwt-decode
