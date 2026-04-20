@@ -8,6 +8,7 @@ export const loginUser = createAsyncThunk(
   'login/loginUser',
   async ({ phone_number, mpin }, { rejectWithValue }) => {
     try {
+      
       const res = await axios.post(`${BaseUrl}/authentication/login/`, { phone_number, mpin })
       // res.data = { message, access, refresh, user: { phone_number, role, full_name, profile } }
       const { access, refresh, user } = res.data

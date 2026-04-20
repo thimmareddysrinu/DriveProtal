@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 
 // Auth pages (public)
 import LoginPage    from './pages/LoginPage/LoginPage.jsx'
@@ -24,43 +23,37 @@ import DriverDashboard from './pages/DriverDashboard/DriverDashboard.jsx'
 // Vehicle Owner pages
 import OwnerDashboard from './pages/OwnerDashboard/OwnerDashboard.jsx'
 import DemoREgister from './pages/RegisterPage/DemoREgister.jsx'
-import HomePage from './pages/HomePage/HomePage.jsx'
+import Navbar from './components/Navbar/Navbar.jsx'
+import Footer from './pages/Footer/Footer.jsx'
+import VehiclesWithMap from './pages/CustomerHome/VehicleGetting/VehiclesWithMap.jsx'
 
 function App() {
-  const [user, setUser] = useState(null)
-  
-  useEffect(() => {
-    // Parse user from localStorage
-    const userStr = localStorage.getItem("user")
-    if (userStr && userStr !== "null" && userStr !== "undefined") {
-      try {
-        const parsedUser = JSON.parse(userStr)
-        setUser(parsedUser)
-      } catch (err) {
-        console.error("Failed to parse user from localStorage:", err)
-        localStorage.removeItem("user")
-      }
-    }
-  }, [])
-  
-  console.log("Current user:", user)
-  
   return (
+    <>
+        <Navbar/>
+    <>  
+
+    
     <Routes>
-      {/* ── Public Routes (only accessible when NOT logged in) ── */}
-      <Route path="/login"        element={!user ? <LoginPage /> : <Navigate to={`/${user.role === 'customer' ? 'customer/home' : user.role === 'driver' ? 'driver/dashboard' : 'owner/dashboard'}`} replace />} />
-      <Route path="/register"     element={!user ? <RegisterPage /> : <Navigate to="/login" replace />} />
-      <Route path="/demoregister" element={!user ? <DemoREgister /> : <Navigate to="/login" replace />} />
-      <Route path="/verify-otp"   element={!user ? <Otpverify /> : <Navigate to="/login" replace />} />
-      <Route path="/set-mpin"     element={!user ? <SetMpin /> : <Navigate to="/login" replace />} />
+   
+       
+      
+
+      {/* ── Public Routes ── */}
+      <Route path="/login"      element={<LoginPage />} />
+      <Route path="/register"   element={<RegisterPage />} />
+       <Route path="/demoregister"   element={<DemoREgister />} />
+      <Route path="/verify-otp" element={<Otpverify />} />
+      <Route path="/set-mpin"   element={<SetMpin />} />
 
       {/* ── Customer Only Routes ── */}
       <Route element={<RoleRoute allowedRoles={['customer']} />}>
-        <Route path="/customer/home"              element={<HomePage />} />
+        <Route path="/customer/home"              element={<CustomerHome />} />
         <Route path="/customer/book"              element={<BookRidePage />} />
         <Route path="/customer/tracking/:rideId"  element={<TrackingPage />} />
         <Route path="/customer/history"           element={<RideHistoryPage />} />
         <Route path="/customer/profile"           element={<ProfilePage />} />
+        <Route path='/customer/home/vehiclewithmap' element={<VehiclesWithMap/>}/>
       </Route>
 
       {/* ── Driver Only Routes ── */}
@@ -76,15 +69,18 @@ function App() {
       </Route>
 
       {/* ── Fallback ── */}
-      <Route path="/" element={
-        user 
-          ? <Navigate to={`/${user.role === 'customer' ? 'customer/home' : user.role === 'driver' ? 'driver/dashboard' : 'owner/dashboard'}`} replace />
-          : <Navigate to="/login" replace />
-      } />
+      <Route path="/"    element={<Navigate to="/login" replace />} />
       <Route path="/404" element={<NotFoundPage />} />
       <Route path="*"    element={<Navigate to="/404" replace />} />
+
     </Routes>
+    </>
+    {/* <Footer/> */}
+    
+    </>
+  
   )
 }
 
 export default App
+       

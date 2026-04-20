@@ -1,0 +1,48 @@
+.css-dtnQzW {
+        background-image: url(https://tb-static.uber.com/prod/udam-assets/5152cc71-a5b0-4fbd-aeb8-bee896efcd48.png);
+        background-position: right bottom;
+        background-repeat: no-repeat;
+        background-size: contain;
+       
+    }
+
+
+
+
+
+
+@media (max-width: 425px) {
+    .going{
+        
+        background-image: none;
+
+
+    }
+  
+    /* .pair{
+        margin: 10px;
+    } */
+ 
+}
+
+@media (min-width: 426px) and (max-width: 991px) {
+    /* .pair{
+        display: flex;
+        flex-direction: column;
+    } */
+
+}
+
+@media (min-width: 992px) {
+    .going{
+     height: 480px;
+        
+       
+       
+
+    }
+      /* .pair{
+        margin: 50px;
+    } */
+ 
+} 

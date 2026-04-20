@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "Driver",
     "Owners",
     "Logistics",
+    "Rides",
   
    
 ]

@@ -1,0 +1,49 @@
+.position-imag {
+  height: 400px;
+  width: 400px;
+  object-fit: contain;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+
+
+.carding .btn {
+  border-radius: 5px;
+}
+
+/* Mobile (up to 575px) */
+@media (max-width: 575.98px) {
+  .position-imag {
+    height: 230px;
+    width: 230px;
+  }
+  
+  
+  
+  
+}
+
+/* Tablet (576px - 991px) */
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .position-imag {
+    height: 300px;
+    width: 300px;
+  }
+}
+
+/* Desktop (992px+) */
+@media (min-width: 992px) {
+  .position-imag {
+    height: 250px;
+  width: 250px;
+  }
+}
+
+/* Extra large screens */
+@media (min-width: 1200px) {
+  .position-imag {
+    height: 400px;
+  width: 400px;
+  }
+}

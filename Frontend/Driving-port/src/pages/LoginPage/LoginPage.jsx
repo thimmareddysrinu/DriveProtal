@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { FaCar, FaPhone, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa'
 import toast from 'react-hot-toast'
 import { loginUser } from '../../store/slices/User-All/LoginSlice'
+import GoRydLogo from '../../LOGOS/IconMain'
 
 
 const LoginPage = () => {
@@ -62,85 +63,78 @@ const LoginPage = () => {
   }
 }
 
-  return (
-    <div className="login-page">
+ return (
+  <div className="container-fluid bg-dark min-vh-100 d-flex align-items-center justify-content-center">
 
-      {/* Left Panel */}
-      <div className="login-left">
-        <div className="login-brand">
-          <FaCar className="login-brand-icon" />
-          <h1>DrivePortal</h1>
-          <p>Your ride, your way</p>
-        </div>
-        <div className="login-features">
-          {['Real-time tracking', 'Safe & Secure rides', 'Best prices in town'].map(f => (
-            <div key={f} className="login-feature">✓ {f}</div>
-          ))}
+    <div className="card bg-dark text-light shadow-lg p-5" style={{ width: "400px" }}>
+
+      <div className="text-center mb-4">
+        <GoRydLogo className="text-warning mb-2" size={80} />
+        <h3 className="fw-bold">Welcome Back</h3>
+        <p className="text-muted">Sign in to continue</p>
+      </div>
+
+      {/* Phone */}
+      <div className="mb-3">
+        <label className="form-label">Mobile Number</label>
+        <input
+          type="tel"
+          name="phone_number"
+          className="form-control form-control-lg"
+          maxLength={10}
+          value={formData.phone_number}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* MPIN */}
+      <div className="mb-3">
+        <label className="form-label">MPIN</label>
+        <div className="input-group">
+          <input
+            type={showMpin ? "text" : "password"}
+            name="mpin"
+            className="form-control form-control-lg"
+            maxLength={6}
+            value={formData.mpin}
+            onChange={handleChange}
+          />
+          <button
+            className="btn btn-outline-warning"
+            onClick={() => setShowMpin(!showMpin)}
+          >
+            {showMpin ? <FaEyeSlash /> : <FaEye />}
+          </button>
         </div>
       </div>
 
-      {/* Right Panel */}
-      <div className="login-right">
-        <div className="login-card glass">
-          <h2>Welcome Back</h2>
-          <p className="login-desc">Sign in to continue your journey</p>
-
-          <form onSubmit={handleSubmit} className="login-form">
-
-            {/* Phone Number */}
-            <div className="form-group">
-              <label>Mobile Number</label>
-              <div className="input-wrapper">
-                <FaPhone className="input-icon" />
-                <input
-                  type="tel"
-                  name="phone_number"
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength={10}
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            {/* MPIN */}
-            <div className="form-group">
-              <label>MPIN</label>
-              <div className="input-wrapper">
-                <FaLock className="input-icon" />
-                <input
-                  type={showMpin ? 'text' : 'password'}
-                  name="mpin"
-                  placeholder="Enter your MPIN"
-                  maxLength={6}
-                  value={formData.mpin}
-                  onChange={handleChange}
-                />
-                <button type="button" className="eye-btn" onClick={() => setShowMpin(!showMpin)}>
-                  {showMpin ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-            </div>
-
-            {/* Errors */}
-            {(formError || error) && (
-              <span className="error">{formError || error}</span>
-            )}
-
-            {/* Submit */}
-            <button type="submit" className="btn-primary-custom w-100" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          <p className="login-footer">
-            Don't have an account? <Link to="/register">Register here</Link>
-          </p>
+      {/* Errors */}
+      {(formError || error) && (
+        <div className="alert alert-danger py-2">
+          {formError || error}
         </div>
-      </div>
+      )}
+
+      {/* Button */}
+      <button
+        type="submit"
+        onClick={handleSubmit}
+        className="btn btn-warning w-100 fw-bold py-2"
+        disabled={loading}
+      >
+        {loading ? "Signing in..." : "Login"}
+      </button>
+
+      <p className="text-center mt-3 text-secondary">
+        Don't have an account?{" "}
+        <Link to="/register" className="text-warning fw-bold">
+          Register
+        </Link>
+      </p>
 
     </div>
-  )
+  </div>
+)
 }
 
 export default LoginPage

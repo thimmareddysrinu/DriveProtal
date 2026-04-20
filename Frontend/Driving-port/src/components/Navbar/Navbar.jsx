@@ -3,7 +3,7 @@ import GoRydLogo from '../../LOGOS/IconMain'
 
 function Navbar() {
   return (
-    <nav className="navbar navbar-expand-lg " style={{'background':"#060505de"}}>
+    <nav className="navbar navbar-expand-lg position-relative " style={{'background':"#060505de","left":'0','right':"0",'top':'0'}}>
   <div className="container-fluid">
     <a className="navbar-brand " href="#" style={{"color":"#dfab32"}}>
        GoRyd <GoRydLogo size={50}/>

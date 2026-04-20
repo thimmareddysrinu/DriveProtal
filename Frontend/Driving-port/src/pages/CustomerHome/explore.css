@@ -1,0 +1,50 @@
+.explore-icon {
+  width: 1000px;
+  height: 160px;
+  object-fit: contain;
+}
+.carding{
+    height: auto;
+    
+}
+.card-title{
+    font-weight: bold;
+}
+
+
+@media (max-width: 575.98px) {
+  .explore-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .card-title{
+    font-weight: 400;
+    font-size: 14px;
+}
+.carding{
+    height: 130px;
+    row-gap: 20px;
+    
+}
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .explore-icon {
+    width: 120px;
+    height: 120px;
+  }
+  .card-title{
+    font-weight: bold;
+}
+}
+
+@media (min-width: 992px) {
+  .explore-icon {
+    width: 160px;
+    height: 160px;
+  }
+  .card-title{
+    font-weight: bolder;
+}
+}

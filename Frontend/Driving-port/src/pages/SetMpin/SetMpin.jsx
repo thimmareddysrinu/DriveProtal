@@ -54,7 +54,7 @@ const SetMpin = () => {
         <div className="row vh-100">
 
           {/* LEFT SIDE */}
-          <div className="col-md-5 d-flex flex-column justify-content-center align-items-center left-side" style={{"background":"#191816e2", }}>
+          <div className="col-md-7 d-flex flex-column justify-content-center align-items-center left-side" style={{"background":"#191816e2", }}>
 
           
             < GoRydLogo className="mb-3 text-warning" />
@@ -63,60 +63,78 @@ const SetMpin = () => {
             
           </div>
 
+
+
           {/* RIGHT SIDE */}
-          <div className="col-md-7 d-flex justify-content-center align-items-center">
-            
-            <div className="card bg-dark register-card p-4">
-              <h2 className="fw-bold text-white">Set Mpin</h2>
-              <p className="text-muted">Start your journey with us today</p>
+         <div className="col-md-5 bg-dark p-5">
+        
+        <div className="text-center mb-4">
+          <FaShieldAlt size={40} className="text-warning mb-2" />
+          <h3 className="fw-bold text-white">Set MPIN</h3>
+          <p className="text-muted">Secure your account with 6-digit MPIN</p>
+        </div>
 
-             
-              
+        {/* Phone Number */}
+        <div className="mb-3">
+          <label className="form-label text-light">Phone Number</label>
+          <input
+            type="text"
+            className="form-control form-control-lg"
+            value={phone_number}
+            disabled
+          />
+        </div>
 
-              <input
-                 type="tel"
-                  name="phone_number"
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
-                  value={phone_number}
-                  
-                className="form-control role-select mb-5 "
-                
-                style={{'height':'50px',"background":'#0000',"color":'#d2ae0dd5'}}
-                
+        {/* MPIN Input */}
+        <div className="mb-3">
+          <label className="form-label text-light">Enter MPIN</label>
+          <input
+            type="password"
+            className="form-control form-control-lg text-center fw-bold"
+            maxLength={6}
+            value={mpin}
+            onChange={(e) => {
+              setMPIN(e.target.value)
+              setFormError('')
+            }}
+          />
+        </div>
 
-              />
-               <input
-                  type="tel"
-              placeholder="Enter 6-digit OTP"
-              maxLength={6}
-              value={mpin}
-              onChange={(e) => { setMPIN(e.target.value); setFormError('') }}
-              autoFocus
-                className="form-control role-select mb-5 "
-                
-                style={{'height':'50px',"background":'#0000',"color":'#d2ae0dd5'}}
-                
-
-              />
-               {/* Validation Error */}
-            {(validationError || error) && (
-              <span className="error">{validationError || error}</span>
-            )}
-            {(formError || error) && (
-            <span className="otp-error">{formError || error}</span>
-          )}
-
-              <button onClick={handleSubmit} className="btn btn-warning w-100 fw-bold"style={{'height':'50px'}}>
-                Send OTP & Register
-              </button>
-
-              <p className="text-center mt-3 text-secondary">
-                Already have an account? <span className="text-warning">Login here</span>
-              </p>
-            </div>
-
+        {/* Errors */}
+        {(validationError || error) && (
+          <div className="alert alert-danger py-2">
+            {validationError || error}
           </div>
+        )}
+
+        {(formError || error) && (
+          <div className="alert alert-warning py-2">
+            {formError || error}
+          </div>
+        )}
+
+        {/* Button */}
+        <button
+          onClick={handleSubmit}
+          className="btn btn-warning w-100 fw-bold py-2"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Set MPIN"}
+        </button>
+
+        {/* Footer */}
+        <p className="text-center mt-3 text-secondary">
+          Already have an account?{" "}
+          <span
+            className="text-warning fw-bold"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/login")}
+          >
+            Login here
+          </span>
+        </p>
+
+      </div>
 
         </div>
       </div>

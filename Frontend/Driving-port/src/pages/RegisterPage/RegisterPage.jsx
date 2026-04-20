@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { registerUser } from '../../store/slices/User-All/RegisterUserSlice'
 import { useState } from 'react'
 import GoRydLogo from '../../LOGOS/IconMain'
+import { FaShieldAlt } from 'react-icons/fa'
 
 
 // Role options — label shown to user, value sent to backend
@@ -27,6 +28,7 @@ const RegisterPage = () => {
   })
 
   const [validationError, setValidationError] = useState('')
+  const [formError, setFormError] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -57,81 +59,85 @@ const RegisterPage = () => {
     }
   }
 
-  return (
-     <div className="register-page">
+ return (
+    <div className="container-fluid bg-dark min-vh-100 d-flex align-items-center justify-content-center">
 
-      <div className="container-fluid " style={{"marginTop":"4px"}}>
-        <div className="row vh-100">
+      <div className="row w-100 shadow-lg rounded overflow-hidden" style={{  }}>
 
-          {/* LEFT SIDE */}
-          <div className="col-md-5 d-flex flex-column justify-content-center align-items-center left-side" style={{"background":"#191816e2", }}>
+        {/* LEFT SIDE (7 columns) */}
+        <div className="col-md-7 bg-black d-flex flex-column justify-content-center align-items-center text-center p-5">
+          <GoRydLogo className="mb-3 text-warning" />
+          <h1 className="text-white fw-bold">DrivePortal</h1>
+          <p className="text-secondary">Let's get you on the road 🚗</p>
+        </div>
 
-          
-            < GoRydLogo className="mb-3 text-warning" />
-            <h1 className="fw-bold text-white">DrivePortal</h1>
-            <p className="text-secondary">Let's get you on the road </p>
-            
+        {/* RIGHT SIDE (5 columns) */}
+        <div className="col-md-5 bg-dark p-5">
+
+          <h3 className="text-white fw-bold mb-3">Create Account</h3>
+          <p className="text-muted mb-4">Start your journey with us</p>
+
+          {/* Role */}
+          <div className="mb-3">
+            <label className="form-label text-light">Select Role</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="form-select form-select-lg"
+            >
+              {ROLES.map(role => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* RIGHT SIDE */}
-          <div className="col-md-7 d-flex justify-content-center align-items-center">
-            
-            <div className="card bg-dark register-card p-4">
-              <h2 className="fw-bold text-white">Create Account</h2>
-              <p className="text-muted">Start your journey with us today</p>
+          {/* Phone Number */}
+          <div className="mb-3">
+            <label className="form-label text-light">Mobile Number</label>
+            <input
+              type="tel"
+              name="phone_number"
+              className="form-control form-control-lg"
+              placeholder="Enter 10-digit mobile number"
+              maxLength={10}
+              value={formData.phone_number}
+              onChange={handleChange}
+            />
+          </div>
 
-              {/* <select className="form-control mb-5 "  style={{'height':'50px',"background":'#a4959500',"color":'#a49465fb'}}
-                >
-                <option>👤 Customer</option>
-                <option>🚗 Driver</option>
-                <option>🚗 vehicle owner</option>
-              </select> */}
-               <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                 className="form-control role-select mb-5 "  style={{'height':'50px',"background":'#a4959500',"color":'#a49465fb'}}
-                >
-                  {ROLES.map(r => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-
-              <input
-                 type="tel"
-                  name="phone_number"
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                className="form-control role-select mb-5 "
-                
-                style={{'height':'50px',"background":'#0000',"color":'#d2ae0dd5'}}
-                
-
-              />
-               {/* Validation Error */}
-            {(validationError || error) && (
-              <span className="error">{validationError || error}</span>
-            )}
-
-              <button onClick={handleSubmit} className="btn btn-warning w-100 fw-bold"style={{'height':'50px'}}>
-                Send OTP & Register
-              </button>
-
-              <p className="text-center mt-3 text-secondary">
-                Already have an account? <span className="text-warning">Login here</span>
-              </p>
+          {/* Error Messages */}
+          {(validationError || error) && (
+            <div className="alert alert-danger py-2">
+              {validationError || error}
             </div>
+          )}
 
-          </div>
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            className="btn btn-warning w-100 fw-bold py-2"
+            disabled={loading}
+          >
+            {loading ? "Sending OTP..." : "Send OTP"}
+          </button>
+
+          {/* Footer */}
+          <p className="text-center mt-3 text-secondary">
+            Already have an account?{" "}
+            <span
+              className="text-warning fw-bold"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate('/login')}
+            >
+              Login
+            </span>
+          </p>
 
         </div>
       </div>
-      
-
     </div>
   )
 }
