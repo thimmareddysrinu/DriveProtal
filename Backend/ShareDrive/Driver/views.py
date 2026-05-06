@@ -16,7 +16,7 @@ from .models import (
 from .serializers import (
     DriverProfileSerializer, DriverVehiclesSerializer,
     SharedRideRouteSerializer, SharedRideBookingSerializer,
-    FullRideRequestSerializer, FullRideAssignmentSerializer
+    FullRideRequestSerializer, FullRideAssignmentSerializer,DriverAdminListSerializer,DriverAdminDetailSerializer
 )
 
 
@@ -43,18 +43,35 @@ class DriverProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request):
-        profile = get_driver_profile(request)
-        serializer = DriverProfileSerializer(profile, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+     profile = get_driver_profile(request)
+     serializer = DriverProfileSerializer(profile, data=request.data, partial=True)
 
+     if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+     print("PATCH request.data =>", request.data)
+     print("PATCH serializer.errors =>", serializer.errors)
+     return Response(
+        {"errors": serializer.errors},
+        status=status.HTTP_400_BAD_REQUEST
+    )
 
 # ─── Driver Vehicle ───────────────────────────────────────────────────────────
 
-class DriverVehicleCreateView(APIView):
+class DriverVehicleCreateGetUpdateView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            driver_profile = DriverProfile.objects.get(user=request.user)
+            vehicle = DriverVehicle.objects.get(driver=driver_profile)
+            serializer = DriverVehiclesSerializer(vehicle)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except DriverProfile.DoesNotExist:
+            return Response({"error": "Driver profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        except DriverVehicle.DoesNotExist:
+            return Response({"message": "No vehicle found"}, status=status.HTTP_200_OK)
 
     def post(self, request):
         try:
@@ -62,16 +79,40 @@ class DriverVehicleCreateView(APIView):
         except DriverProfile.DoesNotExist:
             return Response({"error": "Driver profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        if DriverVehicle.objects.filter(driver=driver_profile).exists():
+            return Response(
+                {"error": "Vehicle already exists, use update"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = DriverVehiclesSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(driver=driver_profile)
             return Response(
-                {"message": "Vehicle submitted for admin verification"},
+                {"message": "Vehicle created successfully", "data": serializer.data},
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def patch(self, request):
+        try:
+            driver_profile = DriverProfile.objects.get(user=request.user)
+        except DriverProfile.DoesNotExist:
+            return Response({"error": "Driver profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        try:
+            vehicle = DriverVehicle.objects.get(driver=driver_profile)
+        except DriverVehicle.DoesNotExist:
+            return Response({"error": "No vehicle found to update"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DriverVehiclesSerializer(vehicle, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Vehicle updated successfully", "data": serializer.data},
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class DriverVehiclesListAdminView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -81,7 +122,21 @@ class DriverVehiclesListAdminView(APIView):
         data = DriverVehicle.objects.all().order_by("created_at")
         serializer = DriverVehiclesSerializer(data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
+class DriverListAdminView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        drivers = DriverProfile.objects.all().order_by('-created_at')
+        serializer = DriverAdminListSerializer(drivers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class DriverVehicleDetailsAdminView(APIView):
     permission_classes = [IsAuthenticated]
@@ -92,30 +147,89 @@ class DriverVehicleDetailsAdminView(APIView):
         vehicle = get_object_or_404(DriverVehicle, id=vehicle_id)
         serializer = DriverVehiclesSerializer(vehicle)
         return Response(serializer.data, status=status.HTTP_200_OK)
+class DriverDetailAdminView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, profile_id):
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
+        driver = get_object_or_404(
+            DriverProfile.objects.prefetch_related('vehicles'),
+            id=profile_id
+        )
+        serializer = DriverAdminDetailSerializer(driver)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+class DriverProfileApprovalAdminView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, profile_id):
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        driver = get_object_or_404(DriverProfile, id=profile_id)
+        action = request.data.get("action")
+
+        if action == "approve":
+            driver.is_available=True
+            driver.verification_status = "approved"
+        elif action == "reject":
+            driver.is_available=False
+            driver.verification_status = "rejected"
+        else:
+            return Response(
+                {"error": "action must be 'approve' or 'reject'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        driver.save()
+        return Response(
+            {
+                "message": "Driver profile approval updated",
+                "verification_status": driver.verification_status,
+            },
+            status=status.HTTP_200_OK
+        )
 class DriverVehicleApprovalAdminView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, vehicle_id):
         if not request.user.is_staff:
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
-        vehicle = get_object_or_404(DriverVehicle, id=vehicle_id)
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
+        vehicle = get_object_or_404(DriverVehicle, id=vehicle_id)
         action = request.data.get("action")
+
         if action == "approve":
             vehicle.is_verified = True
-            vehicle.is_active = "avaliable"
+            vehicle.is_active = "available"
         elif action == "reject":
             vehicle.is_verified = False
-            vehicle.is_active = "not avaliable"
+            vehicle.is_active = "notavailable"
         else:
-            return Response({"error": "action must be 'approve' or 'reject'"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "action must be 'approve' or 'reject'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         vehicle.save()
-        return Response({"message": "Admin review updated"}, status=status.HTTP_200_OK)
-
-
+        return Response(
+            {
+                "message": "Vehicle approval updated",
+                "is_verified": vehicle.is_verified,
+                "is_active": vehicle.is_active,
+            },
+            status=status.HTTP_200_OK
+        )
 # ─── Shared Ride — Driver side ────────────────────────────────────────────────
 
 class SharedRouteCreateView(APIView):

@@ -13,10 +13,15 @@ class VehicleOwnerProfile(models.Model):
     )
 
     # Business details
+    full_name=models.CharField(max_length=100)
     company_name = models.CharField(max_length=200, blank=True, null=True)
     business_license = models.CharField(max_length=100, blank=True, null=True)
     business_license_image = models.ImageField(
         upload_to='owners/licenses/', null=True, blank=True)
+    aadhar_image = models.ImageField(
+        upload_to='owners/aadhar/', null=True, blank=True)
+    pan_image = models.ImageField(
+        upload_to='owners/pancard/', null=True, blank=True)
     gst_number = models.CharField(max_length=15, blank=True, null=True)
 
     # Office/Pickup location

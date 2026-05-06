@@ -49,12 +49,30 @@ class VehicleCreationView(APIView):
             owner_profile = VehicleOwnerProfile.objects.get(user=request.user)
         except VehicleOwnerProfile.DoesNotExist:
             return Response({"error": "Owner profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 
         serializer = VehicleRentalSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(owner=owner_profile)
             return Response(
                 {"message": "Vehicle submitted for admin verification"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def patch(self, request,id):
+        try:
+            owner_profile = VehicleOwnerProfile.objects.get(user=request.user)
+        except VehicleOwnerProfile.DoesNotExist:
+            return Response({"error": "Owner profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        vehicle=get_object_or_404(
+            VehicleRental,id=id,owner=owner_profile
+        )
+
+        serializer = VehicleRentalSerializer(vehicle,data=request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Vehicle updated successfully"},
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -11,6 +11,7 @@ class DriverAdmin(admin.ModelAdmin):
         "is_available",
         "is_online",
         "created_at",
+        'current_location'
         
     ]
 

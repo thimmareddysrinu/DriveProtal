@@ -57,7 +57,7 @@ class DriverProfile(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    full_name=models.CharField(max_length=100,default=True)
     class Meta:
         verbose_name = "Driver Profile"
         verbose_name_plural = "Driver Profiles"
@@ -66,7 +66,7 @@ class DriverProfile(models.Model):
         ]
 
     def __str__(self):
-        return f"Driver: {self.user.phone_number} - {self.verification_status}"
+        return f"Driver: {self.user.phone_number} - {self.verification_status}-{self.current_location}"
     
     def get_distance_from(self, point):
         """Calculate distance from a given point"""
@@ -99,7 +99,13 @@ class DriverVehicle(models.Model):
        
     ]
       # Driver vehicle TYPE
-    driver=models.ForeignKey(DriverProfile,on_delete=models.CASCADE,help_text="driver_vehicles")
+    driver = models.ForeignKey(
+        DriverProfile,
+        on_delete=models.CASCADE,
+        related_name='vehicles',
+        help_text="driver_vehicles"
+    )
+      
     vehicle=models.CharField(max_length=100,choices=VEHICLE_Type)
     registration_number=models.CharField(max_length=70,unique=True,blank=True)
     vehiclemodel=models.CharField(max_length=100,blank=False)

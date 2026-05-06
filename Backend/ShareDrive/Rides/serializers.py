@@ -50,6 +50,10 @@ class RideCreateSerializer(serializers.ModelSerializer):
         from .pricing_agent import estimate_ride_price
         from .models import RideTaxRecord
 
+
+              # Get authenticated user from request context
+        request = self.context.get('request')
+        customer = request.user if request and request.user.is_authenticated else None
         # Run LangGraph agent
         pricing = estimate_ride_price(
             start_lat    = float(validated_data['start_lat']),
@@ -63,11 +67,15 @@ class RideCreateSerializer(serializers.ModelSerializer):
         # Build GIS points
         start_point = Point(float(validated_data['start_lon']), float(validated_data['start_lat']), srid=4326)
         end_point   = Point(float(validated_data['end_lon']),   float(validated_data['end_lat']),   srid=4326)
+        start_address = validated_data['start_address']
+        end_address = validated_data['end_address']
 
         ride = Ride.objects.create(
             **validated_data,
+            customer=customer,
             start_point  = start_point,
             end_point    = end_point,
+           
             distance_km  = pricing['distance_km'],
             base_fare    = pricing['base_fare'],
             ride_price   = pricing['ride_price'],

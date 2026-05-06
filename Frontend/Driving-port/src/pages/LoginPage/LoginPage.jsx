@@ -47,6 +47,7 @@ const LoginPage = () => {
       customer: '/customer/home',
       driver: '/driver/dashboard',
       vehicle_owner: '/owner/dashboard',
+       admin: '/admin/home',
     }
     
     const targetRoute = roleHome[result.user?.role] || '/login'

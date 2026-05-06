@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { logout } from '../../store/slices/User-All/LoginSlice'
 import Navbar from '../../components/Navbar/Navbar'
@@ -177,18 +177,18 @@ const CustomerHome = () => {
     <div className="collapse navbar-collapse justify-items-end" id="navbarSupportedContent">
       <ul className="navbar-nav ms-auto  me-2 mb-lg-0 g-2">
        
-        <li className="nav-item dropdown  me-5" style={{"color":"#565252e3"}}>
-          Requset a ride
-        </li>
-        <li className="nav-item dropdown  me-5" style={{"color":"#565252e3"}}>
-          Reserve a ride
-        </li>
-        <li className="nav-item dropdown  me-5" style={{"color":"#565252e3"}}>
-          See all prices
-        </li>
-        <li className="nav-item dropdown  me-5" style={{"color":"#565252e3"}}>
-          Explore Ride options
-        </li>
+        <Link to='/RentalVehicle' className="nav-item dropdown  me-5" style={{"color":"#565252e3","textDecoration":"none"}}>
+          Rental For Vehicle
+        </Link>
+         <Link to='/RentalVehicle' className="nav-item dropdown  me-5" style={{"color":"#565252e3","textDecoration":"none"}}>
+          LongDrive
+        </Link>
+        <Link to='/RentalVehicle' className="nav-item dropdown  me-5" style={{"color":"#565252e3","textDecoration":"none"}}>
+          Shared 
+        </Link>
+        <Link to='/RentalVehicle' className="nav-item dropdown  me-5" style={{"color":"#565252e3","textDecoration":"none"}}>
+          Sell All Prices
+        </Link>
         
       </ul>
      

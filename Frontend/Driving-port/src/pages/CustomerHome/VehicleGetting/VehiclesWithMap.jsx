@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps'
 import { FaChevronDown } from "react-icons/fa"
 import LocationInput from '../LocationPoint'
@@ -15,6 +15,9 @@ import xl_premier from '../../../images/vehicles/XL_Premium.png'
 import xl from '../../../images/vehicles/xl.png'
 import gononac from '../../../images/vehicles/gononac.png'
 import auto from '../../../images/vehicles/TukTuk_Green_v1.png'
+import { FaCaretDown } from "react-icons/fa";
+import { VehicleBooking } from '../../../store/slices/vehicleBooking/VehicleBooking'
+
 
 
 
@@ -50,7 +53,7 @@ function Directions({ pickup, drop }) {
   useEffect(() => {
     if (!map || !pickup || !drop) return
 
-   const directionsService = new google.maps.DirectionsService()
+    const directionsService = new google.maps.DirectionsService()
     const renderer = new google.maps.DirectionsRenderer({
       map,
       suppressMarkers: true,
@@ -82,13 +85,16 @@ function Directions({ pickup, drop }) {
 function VehiclesWithMap() {
   const { vehicles: vehiclewithprice, loading, error } = useSelector((state) => state.Vehiclesearch)
   // const location = useLocation()
-
+ 
+  // In your dropdown JSX:
+  const navigate=useNavigate()
   const location = useLocation()
   const initaldata = location.state || {}
   const dispatch = useDispatch()
   const [openRideDetails, setOpenRideDetails] = useState(true)
   const [setvehicles, setsetvehicles] = useState('')
   const [selectedvehicle, setselectedvehicle] = useState(null)
+  const [selectedMode, setselectedMode] = useState("normal")
   // const initaldata = location.state || ""
   const [searchinput, setsearchinput] = useState({
     start_address: initaldata.searchdata?.start_address || "",
@@ -101,30 +107,81 @@ function VehiclesWithMap() {
 
   // Coordinates state - Fixed null handling
 
+ const isTwoWheeler = ['bike', 'scooty'].includes(selectedvehicle?.vehicle_type)
 
-const [pickupCoords, setPickupCoords] = useState(
-  initaldata.pickupCoords ? {
-    lat: Number(initaldata.pickupCoords.lat),
-    lng: Number(initaldata.pickupCoords.lng)
-  } : null
-)
 
-const [dropCoords, setDropCoords] = useState(
-  initaldata.dropCoords ? {
-    lat: Number(initaldata.dropCoords.lat),
-    lng: Number(initaldata.dropCoords.lng)
-  } : null
-)
 
-const [mapCenter, setMapCenter] = useState(
-  initaldata.pickupCoords
-    ? { lat: Number(initaldata.pickupCoords.lat), lng: Number(initaldata.pickupCoords.lng) }
-    : { lat: 17.385044, lng: 78.486671 }
-)
+  // booking vehicle
+  const bookvehicle = async () => {
+    if (!selectedvehicle) {
+      alert('Please select a vehicle first!')
+      return
+    }
 
-const [showRoute, setShowRoute] = useState(
-  !!(initaldata.pickupCoords && initaldata.dropCoords)
-)
+    const bookingdata = {
+      start_address: searchinput.start_address,
+      end_address: searchinput.end_address,
+      start_lat: Number(Number(searchinput.start_lat).toFixed(6)),
+      start_lon: Number(Number(searchinput.start_lon).toFixed(6)),
+      end_lat: Number(Number(searchinput.end_lat).toFixed(6)),
+      end_lon: Number(Number(searchinput.end_lon).toFixed(6)),
+      vehicle_type: selectedvehicle.vehicle_type,
+      ride_mode: selectedMode,
+    }
+    console.log('booking data', bookingdata)
+    try {
+      const book = await dispatch(VehicleBooking(bookingdata)).unwrap()
+      console.log(book)
+      navigate("/vehicleBooking/Progress",{
+      state:{
+        searchdata:bookingdata,
+        vehicles:book,
+           pickupCoords: {
+          lat: Number(bookingdata.start_lat),
+          lng: Number(bookingdata.start_lon)
+        },
+        dropCoords: {
+          lat: Number(bookingdata.end_lat),
+          lng: Number(bookingdata.end_lon)
+        }
+      }
+     })
+    } catch (error) {
+      console.error('Booking failed:', error)
+      alert(error.message || 'Booking Is Failed')
+    }
+
+
+  }
+
+
+
+
+  // booking vehicle
+
+  const [pickupCoords, setPickupCoords] = useState(
+    initaldata.pickupCoords ? {
+      lat: Number(initaldata.pickupCoords.lat),
+      lng: Number(initaldata.pickupCoords.lng)
+    } : null
+  )
+
+  const [dropCoords, setDropCoords] = useState(
+    initaldata.dropCoords ? {
+      lat: Number(initaldata.dropCoords.lat),
+      lng: Number(initaldata.dropCoords.lng)
+    } : null
+  )
+
+  const [mapCenter, setMapCenter] = useState(
+    initaldata.pickupCoords
+      ? { lat: Number(initaldata.pickupCoords.lat), lng: Number(initaldata.pickupCoords.lng) }
+      : { lat: 17.385044, lng: 78.486671 }
+  )
+
+  const [showRoute, setShowRoute] = useState(
+    !!(initaldata.pickupCoords && initaldata.dropCoords)
+  )
   // Initialize from location state
   useEffect(() => {
     if (initaldata.pickupCoords?.lat && initaldata.pickupCoords?.lon) {
@@ -170,210 +227,245 @@ const [showRoute, setShowRoute] = useState(
   return (
     <div >
       {GOOGLE_MAPS_API_KEY ? (
-       <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places', 'routes']}>
-  <div className="d-flex flex-row gap-4 p-4" style={{ height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
-    <div className="col-md-6 d-flex flex-column" style={{ height: '100%', minHeight: 0 }}>
-      {/* left content */}
-   
-    <div
-      className="flex-grow-1 overflow-auto p-3"
-      style={{
-        minHeight: 0,
-        paddingBottom: '120px'
-      }}
-    >
-      {/* header + location card + vehicles */}
-       <div className="text-dark mb-5">
-                <h1 style={{ fontWeight: "bold", fontSize: "2.5rem", margin: 0 }}>
-                  Choose A Ride
-                </h1>
-              </div>
+        <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places', 'routes']}>
+          <div className="d-flex flex-row gap-4 p-4" style={{ height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
+            <div className="col-md-6 d-flex flex-column" style={{ height: '100%', minHeight: 0 }}>
+              {/* left content */}
 
-              {/* COLLAPSIBLE LOCATION INPUT */}
-              <div className="bg-light p-4 mb-4 rounded-4 shadow-sm">
-                <div className="border-0 shadow-sm rounded-4 overflow-hidden">
-                  <button
-                    type="button"
-                    className="w-100 border-0 bg-white text-start p-4"
-                    onClick={() => setOpenRideDetails(!openRideDetails)}
-                  >
-                    <div className="d-flex justify-content-between align-items-start">
-                      <h6 className="mb-0 fw-bold text-dark" style={{
-                        fontSize: "1.1rem",
-                        lineHeight: "1.3",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: "75%"
-                      }}>
-                        {searchinput.start_address && searchinput.end_address
-                          ? `${searchinput.start_address.slice(0, 25)} → ${searchinput.end_address.split(",")[0]}`
-                          : "Pickup location → Drop location"
-                        }
-                      </h6>
-                      <FaChevronDown
-                        size={20}
-                        className="text-muted ms-3"
-                        style={{
-                          marginTop: "4px",
-                          transform: openRideDetails ? "rotate(180deg)" : "rotate(0deg)",
-                          transition: "transform 0.3s ease"
-                        }}
-                      />
-                    </div>
-                  </button>
+              <div
+                className="flex-grow-1 overflow-auto p-3"
+                style={{
+                  minHeight: 0,
+                  paddingBottom: '120px'
+                }}
+              >
+                {/* header + location card + vehicles */}
+                <div className="text-dark mb-5">
+                  <h1 style={{ fontWeight: "bold", fontSize: "2.5rem", margin: 0 }}>
+                    Choose A Ride
+                  </h1>
+                </div>
 
-                  {openRideDetails && (
-                    <div className="p-4" style={{ background: "#f8f9fa", borderRadius: "0 0 12px 12px" }}>
-                      <LocationInput
-                        placeholder="Pickup location"
-                        field="start"
-                        setSearchInput={setsearchinput}
-                        value={searchinput.start_address}
-                      />
-                      <LocationInput
-                        placeholder="Drop location"
-                        field="end"
-                        setSearchInput={setsearchinput}
-                        value={searchinput.end_address}
-                      />
-                      <button
-                        onClick={handleSearch}
-                        className="btn w-100 mt-3 py-2"
+                {/* COLLAPSIBLE LOCATION INPUT */}
+                <div className="bg-light p-4 mb-4 rounded-4 shadow-sm">
+                  <div className="border-0 shadow-sm rounded-4 overflow-hidden">
+                    <button
+                      type="button"
+                      className="w-100 border-0 bg-white text-start p-4"
+                      onClick={() => setOpenRideDetails(!openRideDetails)}
+                    >
+                      <div className="d-flex justify-content-between align-items-start">
+                        <h6 className="mb-0 fw-bold text-dark" style={{
+                          fontSize: "1.1rem",
+                          lineHeight: "1.3",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "75%"
+                        }}>
+                          {searchinput.start_address && searchinput.end_address
+                            ? `${searchinput.start_address.slice(0, 25)} → ${searchinput.end_address.split(",")[0]}`
+                            : "Pickup location → Drop location"
+                          }
+                        </h6>
+                        <FaChevronDown
+                          size={20}
+                          className="text-muted ms-3"
+                          style={{
+                            marginTop: "4px",
+                            transform: openRideDetails ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.3s ease"
+                          }}
+                        />
+                      </div>
+                    </button>
+
+                    {openRideDetails && (
+                      <div className="p-4" style={{ background: "#f8f9fa", borderRadius: "0 0 12px 12px" }}>
+                        <LocationInput
+                          placeholder="Pickup location"
+                          field="start"
+                          setSearchInput={setsearchinput}
+                          value={searchinput.start_address}
+                        />
+                        <LocationInput
+                          placeholder="Drop location"
+                          field="end"
+                          setSearchInput={setsearchinput}
+                          value={searchinput.end_address}
+                        />
+                        <button
+                          onClick={handleSearch}
+                          className="btn w-100 mt-3 py-2"
+                          style={{
+                            background: "#000",
+                            color: "#fff",
+                            borderRadius: "12px",
+                            fontWeight: 600,
+                            fontSize: "1.1rem"
+                          }}
+                        >
+                          Find Route
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* VEHICLES LIST */}
+                <div className=" shadow-sm rounded-4 p-4">
+                  <h3 className="text-dark mb-4" style={{ fontSize: "1.5rem" }}>
+                    Rides we think you'll like
+
+                  </h3>
+
+                  {vehiclewithprice?.length > 0 ? (
+                    vehiclewithprice.map((vehicle, index) => (
+                      <div
+                        key={index}
+                        className=" mb-3 p-4  shadow-sm"
                         style={{
-                          background: "#000",
-                          color: "#fff",
-                          borderRadius: "12px",
-                          fontWeight: 600,
-                          fontSize: "1.1rem"
+                          borderRadius: '18px',
+                          border: selectedvehicle?.vehicle_type === vehicle.vehicle_type
+                            ? '4px solid #eabd1ad4'
+                            : '4px solid transparent',
+                          cursor: 'pointer'
                         }}
+                        onClick={() => setselectedvehicle(vehicle)}
                       >
-                        Find Route
-                      </button>
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                          {/* Left side: icon + name */}
+                          <div className="d-flex align-items-center gap-3">
+                            <img
+                              src={getVehicleIcon(vehicle.vehicle_type)}
+                              alt={vehicle.vehicle_name}
+                              width={124}
+                              height={124}
+                              style={{ objectFit: 'contain' }}
+                            />
+
+                            <div>
+                              <h5 className="mb-1 text-dark fw-bold">{vehicle.vehicle_name}</h5>
+
+                            </div>
+                          </div>
+
+                          {/* Right side: pricing */}
+                          <div className="d-flex align-items-center gap-4">
+                            <div className="text-center">
+                              <p className="mb-1 text-danger fw-semibold">Normal</p>
+                              <div className="fw-bold fs-4 text-warning">
+                                ₹{vehicle.normal?.total_price ?? 'N/A'}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                width: '1px',
+                                height: '60px',
+                                backgroundColor: '#ddd'
+                              }}
+                            ></div>
+
+                            <div className="text-center">
+                              <p className="mb-1 text-primary fw-semibold">Shared</p>
+                              <div className="fw-bold fs-4 text-warning">
+                                ₹{vehicle.shared?.total_price ?? 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-5 text-muted">
+                      <p className="mb-0">No vehicles found</p>
+                      <small>Enter locations to see available rides</small>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* VEHICLES LIST */}
-              <div className=" shadow-sm rounded-4 p-4">
-                <h3 className="text-dark mb-4" style={{ fontSize: "1.5rem" }}>
-                  Rides we think you'll like
+              <div
+                className="bg-white shadow-lg border-top rounded-top-4 p-3"
+                style={{
+                  flexShrink: 0
+                }}
+              >
+                {/* bottom buttons */}
+                <div className="row g-2">
 
-                </h3>
 
-                {vehiclewithprice?.length > 0 ? (
-                  vehiclewithprice.map((vehicle, index) => (
-                    <div
-                      key={index}
-                      className=" mb-3 p-4  shadow-sm"
-                      style={{
-                        borderRadius: '18px',
-                        border: selectedvehicle?.vehicle_type === vehicle.vehicle_type
-                          ? '4px solid #eabd1ad4'
-                          : '4px solid transparent',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setselectedvehicle(vehicle)}
-                    >
-                      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                  <div className="col-5">
+                    <div className="dropdown">
+                      <button
+                        className="btn btn-outline-warning w-100 py-3 fs-6 fw-bold rounded-3 shadow-sm text-warning border-warning"
+                        type="button"
+                        data-bs-toggle={isTwoWheeler ? undefined : "dropdown"}
+                        aria-expanded="false"
+                        disabled={isTwoWheeler}
+                      >
+                        {isTwoWheeler ? 'Normal Only' :
+                          selectedMode === 'normal' ? 'Normal' : 'Shared'}
+                        {isTwoWheeler ? null : <FaCaretDown />}
+                      </button>
 
-                        {/* Left side: icon + name */}
-                        <div className="d-flex align-items-center gap-3">
-                          <img
-                            src={getVehicleIcon(vehicle.vehicle_type)}
-                            alt={vehicle.vehicle_name}
-                            width={124}
-                            height={124}
-                            style={{ objectFit: 'contain' }}
-                          />
+                      {!isTwoWheeler && (
+                        <ul className="dropdown-menu w-100">
+                          <li>
+                            <button
+                              className={`dropdown-item ${selectedMode === 'normal' ? 'active fw-bold' : ''}`}
+                              onClick={() => setselectedMode('normal')}
+                            >
+                              Normal
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              className={`dropdown-item ${selectedMode === 'shared' ? 'active fw-bold' : ''}`}
+                              onClick={() => setselectedMode('shared')}
+                            >
+                              Shared <RiUserSharedFill size={16} className="ms-2" />
+                            </button>
+                          </li>
+                        </ul>
+                      )}
 
-                          <div>
-                            <h5 className="mb-1 text-dark fw-bold">{vehicle.vehicle_name}</h5>
-
-                          </div>
-                        </div>
-
-                        {/* Right side: pricing */}
-                        <div className="d-flex align-items-center gap-4">
-                          <div className="text-center">
-                            <p className="mb-1 text-danger fw-semibold">Normal</p>
-                            <div className="fw-bold fs-4 text-warning">
-                              ₹{vehicle.normal?.total_price ?? 'N/A'}
-                            </div>
-                          </div>
-
-                          <div
-                            style={{
-                              width: '1px',
-                              height: '60px',
-                              backgroundColor: '#ddd'
-                            }}
-                          ></div>
-
-                          <div className="text-center">
-                            <p className="mb-1 text-primary fw-semibold">Shared</p>
-                            <div className="fw-bold fs-4 text-warning">
-                              ₹{vehicle.shared?.total_price ?? 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      {isTwoWheeler && (
+                        <small className="text-muted mt-1 d-block">
+                          🚲 Shared rides not available for two-wheelers
+                        </small>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-5 text-muted">
-                    <p className="mb-0">No vehicles found</p>
-                    <small>Enter locations to see available rides</small>
                   </div>
-                )}
+
+                  <div className="col-7">
+                    <button onClick={bookvehicle} className="btn btn-warning w-100 py-3 fs-6 fw-bold rounded-3 shadow-sm">
+                      Request {selectedvehicle?.vehicle_name || "Ride"}
+                    </button>
+                  </div>
+                </div>
               </div>
-    </div>
 
-    <div
-      className="bg-white shadow-lg border-top rounded-top-4 p-3"
-      style={{
-        flexShrink: 0
-      }}
-    >
-      {/* bottom buttons */}
-        <div className="row g-2">
-                      <div className="col-2">
-                        <button className="btn btn-warning w-100 py-3 fs-6 fw-bold rounded-3 shadow-sm">
-                          <RiUserSharedFill />
-                        </button>
-                      </div>
-                      <div className="col-3">
-                        <button className="btn btn-warning w-100 py-3 fs-6 fw-bold rounded-3 shadow-sm">
-                          Cab
-                        </button>
-                      </div>
-                      <div className="col-7">
-                        <button className="btn btn-warning w-100 py-3 fs-6 fw-bold rounded-3 shadow-sm">
-                          Request {selectedvehicle?.vehicle_name || "Ride"}
-                        </button>
-                      </div>
-                    </div>
-    </div>
-  
-    </div>
+            </div>
 
-    <div className="col-md-6 p-0" style={{ height: '100%', minHeight: 0 }}>
-      <div style={{ height: '100%', width: '100%', borderRadius: '20px', overflow: 'hidden' }}>
-        <Map
-          mapId={GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID'}
-          center={mapCenter}
-          zoom={13}
-          style={{ width: '100%', height: '100%' }}
-        >
-          {pickupCoords && <AdvancedMarker position={pickupCoords}><Pin background="#22c55e" /></AdvancedMarker>}
-          {dropCoords && <AdvancedMarker position={dropCoords}><Pin background="#ef4444" /></AdvancedMarker>}
-          {showRoute && pickupCoords && dropCoords && <Directions pickup={pickupCoords} drop={dropCoords} />}
-        </Map>
-      </div>
-    </div>
-  </div>
-</APIProvider>
+            <div className="col-md-6 p-0" style={{ height: '100%', minHeight: 0 }}>
+              <div style={{ height: '100%', width: '100%', borderRadius: '20px', overflow: 'hidden' }}>
+                <Map
+                  mapId={GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID'}
+                  center={mapCenter}
+                  zoom={13}
+                  style={{ width: '100%', height: '100%' }}
+                >
+                  {pickupCoords && <AdvancedMarker position={pickupCoords}><Pin background="#22c55e" /></AdvancedMarker>}
+                  {dropCoords && <AdvancedMarker position={dropCoords}><Pin background="#ef4444" /></AdvancedMarker>}
+                  {showRoute && pickupCoords && dropCoords && <Directions pickup={pickupCoords} drop={dropCoords} />}
+                </Map>
+              </div>
+            </div>
+          </div>
+        </APIProvider>
       ) : (
         <div className="alert alert-warning d-flex align-items-center justify-content-center vh-100">
           <div className="text-center">

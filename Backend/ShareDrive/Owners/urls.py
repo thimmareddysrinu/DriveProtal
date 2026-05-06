@@ -1,20 +1,27 @@
 from django.urls import path
 from .views import *
-  
-  
+
 
 urlpatterns = [
     # ── Owner Profile ─────────────────────────────────────────────────
-    path('profile/',                            VehicleOwnerProfileView.as_view(),      name='owner-profile'),
+    path('profile/',
+         VehicleOwnerProfileView.as_view(),      name='owner-profile'),
 
     # ── Owner Vehicles ────────────────────────────────────────────────
-    path('vehicles/add/',                       VehicleCreationView.as_view(),          name='owner-vehicle-add'),
-    path('vehicles/',                           OwnerVehicleListView.as_view(),         name='owner-vehicle-list'),
+    path('vehicles/add/',
+         VehicleCreationView.as_view(),          name='owner-vehicle-add'),
+          path('vehicles/<int:id>/',
+         VehicleCreationView.as_view(),          name='owner-vehicle-update'),
+    path('vehicles/',
+         OwnerVehicleListView.as_view(),         name='owner-vehicle-list'),
 
     # ── Admin Vehicle Management ──────────────────────────────────────
-    path('admin/vehicles/',                     VehicleListAdminView.as_view(),         name='admin-rental-vehicles'),
-    path('admin/vehicle/<int:vehicle_id>/',     VehicleDetailsAdminView.as_view(),      name='admin-rental-vehicle-detail'),
-    path('admin/vehicle/<int:vehicle_id>/approval/', VehicleApprovalAdminView.as_view(), name='admin-rental-vehicle-approval'),
+    path('admin/vehicles/',
+         VehicleListAdminView.as_view(),         name='admin-rental-vehicles'),
+    path('admin/vehicle/<int:vehicle_id>/',
+         VehicleDetailsAdminView.as_view(),      name='admin-rental-vehicle-detail'),
+    path('admin/vehicle/<int:vehicle_id>/approval/',
+         VehicleApprovalAdminView.as_view(), name='admin-rental-vehicle-approval'),
 
     # # ── Customer Browse ───────────────────────────────────────────────
     # path('vehicles/available/',                 AvailableRentalVehiclesView.as_view(),  name='rental-vehicles-available'),

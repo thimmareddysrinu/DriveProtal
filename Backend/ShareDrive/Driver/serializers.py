@@ -4,13 +4,14 @@ from .models import DriverProfile, DriverVehicle, SharedRideRoute, SharedRideBoo
 
 class DriverProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(source='user.phone_number', read_only=True)
-    full_name = serializers.CharField(source='user.full_name', read_only=True)
+   
     
     class Meta:
         model = DriverProfile
         fields = [
             'id', 'phone_number', 'full_name', 'license_number', 'license_expiry',
-            'license_image', 'verification_status', 'aadhar_number', 'pan_number',
+            'license_image', 'verification_status', 'aadhar_number','aadhar_image', 'pan_number',
+            "pan_image",
             'is_available', 'is_online',
             'total_rides_completed', 'rating', 'total_earnings',
             'bank_account_number', 'bank_ifsc', 'created_at', 'updated_at'
@@ -25,6 +26,50 @@ class DriverVehiclesSerializer(serializers.ModelSerializer):
         read_only_fields = ['driver', 'is_verified', 'created_at', 'updated_at']
 
 
+
+class DriverVehicleNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DriverVehicle
+        fields ='__all__'
+
+
+class DriverAdminListSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(source='user.phone_number', read_only=True)
+    
+
+    class Meta:
+        model = DriverProfile
+        fields = '__all__'
+
+
+class DriverAdminDetailSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(source='user.phone_number', read_only=True)
+    vehicles = DriverVehicleNestedSerializer(many=True, read_only=True)
+    class Meta:
+        model = DriverProfile
+        fields = [
+            'id',
+            'phone_number',
+            'full_name',
+            'license_number',
+            'license_expiry',
+            'license_image',
+            'verification_status',
+            'aadhar_number',
+            'aadhar_image',
+            'pan_number',
+            'pan_image',
+            'bank_account_number',
+            'bank_ifsc',
+            'is_available',
+            'is_online',
+            'total_rides_completed',
+            'rating',
+            'total_earnings',
+            'created_at',
+            'updated_at',
+            'vehicles',
+        ]
 # ─── Shared Ride ─────────────────────────────────────────────────────────────
 
 class SharedRideRouteSerializer(serializers.ModelSerializer):
@@ -94,4 +139,4 @@ class FullRideAssignmentSerializer(serializers.ModelSerializer):
             'driver_vehicle', 'vehicle_brand', 'vehicle_model', 'vehicle_number',
             'accepted_at', 'started_at', 'completed_at', 'final_price',
         ]
-        read_only_fields = ['driver', 'driver_vehicle', 'accepted_at']
+        read_only_fields = ['driver', 'driver_vehicle', 'accepted_at']

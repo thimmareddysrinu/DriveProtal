@@ -16,8 +16,10 @@ from .serializers import (
 )
 from .pricing_agent import estimate_ride_price
 
-
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 # # ── Helper: get CustomerProfile from request ──────────────────────────────────
+
 
 def _get_customer(request):
     from Customer.models import CustomerProfile
@@ -273,67 +275,79 @@ class GetAllVehiclesPriceView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+
+
+
 class RideProccessingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-      serializer = RideCreateSerializer(data=request.data)
-      if serializer.is_valid():
-        ride = serializer.save(customer=request.user)
-        return Response({
-        "ride": RideCreateSerializer(ride).data
-    })
-      return Response(serializer.errors, status=400)
+        serializer = RideCreateSerializer(
+            data=request.data, context={'request': request}
+        )
+
+        if serializer.is_valid():
+            ride = serializer.save()
+            self.notify_avaliable_drivers(ride)
+            return Response({"ride": RideSerializer(ride).data}, status=201)
+
+        return Response(serializer.errors, status=400)
 
     def notify_avaliable_drivers(self, ride):
-        from channels.layers import get_channel_layers
-        from asgiref.sync import async_to_sync, AsyncToSync
-        import json
+        channel_layer = get_channel_layer()
 
-        channel_layer = get_channel_layers()
+        # Get pickup coordinates from ride (adjust field names to match your model)
+        pickup_lng = ride.start_lat  # or ride.start_longitude
+        pickup_lat = ride.start_lon   # or ride.start_latitude
+
+        # Create pickup point as (longitude, latitude) = (x, y)
+        pickup_point = Point(float(pickup_lng), float(pickup_lat), srid=4326)
 
         nearby_drivers = DriverProfile.objects.filter(
+            is_online=True,
             is_available=True,
-            current_point__distance_lte=(ride.start_point, D(km=5))
-        ).exclude(status='busy')
+            current_location__isnull=False,
+            current_location__distance_lte=(pickup_point, D(km=5))
+        )
+
+        print("Pickup point:", pickup_point)
+        print("Pickup lat/lng:", pickup_lat, pickup_lng)
+        print("Nearby drivers count:", nearby_drivers.count())
 
         driver_data = {
-            'type': 'ride_request',
-            'ride_id': ride.id,
-            'pickup': ride.start_address,
-            'drop': ride.end_address,
-            'vehicle_type': ride.vehicle_type,
-            'ride_mode': ride.ride_mode,
-            'customer_name': ride.customer.user.first_name,
-            'customer_phone': ride.customer.phone_number,
-            'distance_km': ride.distance_km,
-            'price_breakdown': {
-                'base_fare': float(ride.base_fare),
-                'ride_price': float(ride.ride_price),
-                'tax_amount': float(ride.tax_amount),
-                'total_price': float(ride.total_price),
-                # 80% to driver
-                'driver_earnings': float(ride.ride_price * 0.8),
-            }
+            "type": "ride_request",
+            "ride_id": ride.id,
+            "pickup": ride.start_address,
+            "drop": ride.end_address,
+            "vehicle_type": ride.vehicle_type,
+            "ride_mode": ride.ride_mode,
+            "customer_name": ride.customer.first_name,
+            "customer_phone": ride.customer.phone_number,
+            "distance_km": float(ride.distance_km),
+            "price_breakdown": {
+                "base_fare": float(ride.base_fare),
+                "ride_price": float(ride.ride_price),
+                "tax_amount": float(ride.tax_amount),
+                "total_price": float(ride.total_price),
+                "driver_earnings": float(ride.ride_price * 0.8),
+            },
+            "expires_in": 90,
         }
 
         for driver in nearby_drivers:
-         async_to_sync(channel_layer.group_send)(
-            f"driver_{driver.user.id}",
-            driver_data
-        )
-
-
+            group_name = f"driver_{driver.user.id}"
+            print("Sending to group:", group_name)
+            async_to_sync(channel_layer.group_send)(group_name, driver_data)
 # class RideAcceptedView(APIView):
 #     permission_classes = [IsAuthenticated]
 
 #     def post(self, request):
 #         # Validate required fields
-       
+
 
 #         return Response(
 #             {
 #                 "message": "Ride Accepted By Driver suCCesfully",
-              
+
 #             }
 #         )
