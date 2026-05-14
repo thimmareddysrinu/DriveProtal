@@ -25,7 +25,7 @@ function Directions({ pickup, drop }) {
       map,
       suppressMarkers: true,
       polylineOptions: {
-        strokeColor: '#0a0a0a',
+        strokeColor: '#e4c40a',
         strokeWeight: 5,
       },
     })
@@ -335,18 +335,18 @@ function WaitForDriverAcceptance() {
                 </div>
               </div>
 
-              <div className="shadow-sm rounded-4 p-1">
+              <div className="shadow-sm rounded-4 p-0">
                 {activeRide ? (
-                  <div className="shadow-sm rounded-4 p-4 bg-white">
-
                   <div className="shadow-sm rounded-4  bg-white">
+
+                  {/* <div className="shadow-sm rounded-4  bg-white">
                     <h3 className="text-dark mb-4" style={{ fontSize: '1.5rem' }}>
                       {isDriverAssigned
                         ? ''
                         : 'Waiting for driver acceptance'}
                     </h3>
-                  </div>
-                    <div className=" shadow-sm rounded-4 p-4 bg-white text-center py-5">
+                  </div> */}
+                    <div className=" shadow-sm rounded-4  bg-white text-center py-3">
                       {!isDriverAssigned && (
                         <div
                           className="spinner-border text-warning mb-4"
@@ -359,7 +359,7 @@ function WaitForDriverAcceptance() {
 
                       <h4 className="fw-bold text-dark mb-3">
                         {isDriverAssigned
-                          ? 'PicKUp In 2 minus'
+                          ? 'Pickup In 2 minus'
                           : 'Looking for a driver nearby'}
                       </h4>
 
@@ -378,7 +378,7 @@ function WaitForDriverAcceptance() {
                         className="mx-auto ps-1 pb-4 pe-2 pt-4 rounded-4"
                         style={{ maxWidth: '500px' }}
                       >
-                        <div className='card mb-3 p-3'>
+                        {/* <div className='card mb-3 p-3'>
                           <p>Ride Details</p>
                                 <h6
                         className="mb-0 fw-bold fs-4 text-dark"
@@ -397,7 +397,7 @@ function WaitForDriverAcceptance() {
                           : 'Pickup location → Drop location'}
                       </h6>
 
-                        </div>
+                        </div> */}
   
   <div className="card py-4 px-1 w-100 h-100">
     <div className="row align-items-center">
@@ -456,7 +456,7 @@ function WaitForDriverAcceptance() {
                           <strong>Price:</strong> ₹{activeRide.total_price}
                         </p>
 
-                        {isDriverAssigned && currentDriver && (
+                        {/* {isDriverAssigned && currentDriver && (
                           <div className="card">
                             <hr />
                             <p className="mb-2">
@@ -482,7 +482,7 @@ function WaitForDriverAcceptance() {
                               {`${currentVehicle.brand || ''} ${currentVehicle.vehicle_model || currentVehicle.vehiclemodel || ''}`.trim() || 'N/A'}
                             </p>
                           </div>
-                        )}
+                        )} */}
                       </div>
 
                       {loading && (
@@ -529,7 +529,7 @@ function WaitForDriverAcceptance() {
             </div>
           </div>
 
-          <div className="col-md-6 p-0" style={{ height: '100%', minHeight: 0 }}>
+          <div className="col-md-6 pe-3" style={{ height: '100%', minHeight: 0 }}>
             <div
               style={{
                 height: '100%',
@@ -549,13 +549,13 @@ function WaitForDriverAcceptance() {
 >
                 {pickupCoords && (
                   <AdvancedMarker position={pickupCoords}>
-                    <Pin background="#22c55e" />
+                    <Pin background="#f1d628" />
                   </AdvancedMarker>
                 )}
 
                 {dropCoords && (
                   <AdvancedMarker position={dropCoords}>
-                    <Pin background="#ef4444" />
+                    <Pin background="#f0e116" />
                   </AdvancedMarker>
                 )}
 
