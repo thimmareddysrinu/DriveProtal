@@ -3,42 +3,33 @@ import axios from 'axios'
 
 const BaseUrl = 'http://127.0.0.1:8000'
 
-// Login → POST phone_number + mpin → backend returns access + refresh tokens
 export const VehicleBooking = createAsyncThunk(
   'vehicles/booking',
   async (bookingdata, { rejectWithValue }) => {
-    console.log('📤 Sending to backend:', bookingdata) 
-
-    
-
-
-
-
-
-
     try {
-        const token = localStorage.getItem('access')
-        console.log(token)
-      const res = await axios.post(`${BaseUrl}/rides/book/vehicles/`, {
-         "start_address":bookingdata.start_address ,
-  "start_lat":bookingdata.start_lat ,
-  "start_lon":bookingdata.start_lon ,
-  "end_address":bookingdata.end_address ,
-  "end_lat": bookingdata.end_lat,
-  "end_lon": bookingdata.end_lon,
-  'vehicle_type':bookingdata.vehicle_type,
-  'ride_mode':bookingdata.ride_mode,
+      const token = localStorage.getItem('access')
 
-      },
-    {
-         headers: {
+      const res = await axios.post(
+        `${BaseUrl}/rides/book/vehicles/`,
+        {
+          start_address: bookingdata.start_address,
+          start_lat: bookingdata.start_lat,
+          start_lon: bookingdata.start_lon,
+          end_address: bookingdata.end_address,
+          end_lat: bookingdata.end_lat,
+          end_lon: bookingdata.end_lon,
+          vehicle_type: bookingdata.vehicle_type,
+          ride_mode: bookingdata.ride_mode,
+        },
+        {
+          headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-    })
-      // res.data = { message, access, refresh, user: { phone_number, role, full_name, profile } }
-     
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
+      console.log('✅ Booking response from backend:', res.data)
       return res.data
     } catch (err) {
       return rejectWithValue(err.response?.data || { message: 'Booking Failed' })
@@ -46,36 +37,107 @@ export const VehicleBooking = createAsyncThunk(
   }
 )
 
+export const DriverAcceptVehicleBooking = createAsyncThunk(
+  'vehicle/bookingAccepted',
+  async (rideId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+
+      console.log('📤 Sending to backend:', { ride_id: rideId })
+
+      const res = await axios.post(
+        `${BaseUrl}/rides/book/vehicles/driveraccepted/`,
+        { ride_id: rideId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      console.log('✅ Response from backend:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(err.response?.data || { message: 'Booking Failed' })
+    }
+  }
+)
+
+export const CheckRideStatus = createAsyncThunk(
+  'vehicle/checkStatus',
+  async (rideId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+
+      const res = await axios.get(`${BaseUrl}/rides/status/${rideId}/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      console.log('✅ Ride status response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to fetch ride status' }
+      )
+    }
+  }
+)
+
 const initialState = {
- 
+  bookingDetails: null,
+  currentRide: null,
+  currentDriver: null,
+  currentVehicle: null,
   loading: false,
   error: null,
 }
 
 const VehicleBookingSlice = createSlice({
-  name: 'vehiclebook',
+  name: 'Vehiclebooks',
   initialState,
-  reducers: {
-   
-    
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(VehicleBooking.pending, (state) => {
+      .addCase(DriverAcceptVehicleBooking.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(VehicleBooking.fulfilled, (state, action) => {
+      .addCase(DriverAcceptVehicleBooking.fulfilled, (state, action) => {
         state.loading = false
-        state.vehicles = action.payload.vehicles ||[]
-        
+        state.bookingDetails = action.payload
+        state.currentRide = action.payload?.ride || null
+        state.currentDriver = action.payload?.driver || null
+        state.currentVehicle = action.payload?.driver_vehicle || null
+        state.error = null
       })
-      .addCase(VehicleBooking.rejected, (state, action) => {
+      .addCase(DriverAcceptVehicleBooking.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload?.message || 'booking failed'
+        state.error = action.payload || action.error?.message
+      })
+      .addCase(CheckRideStatus.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(CheckRideStatus.fulfilled, (state, action) => {
+        state.loading = false
+        state.bookingDetails = {
+          ...state.bookingDetails,
+          ...action.payload,
+        }
+        state.currentRide = action.payload?.ride || state.currentRide
+        state.currentDriver = action.payload?.driver || state.currentDriver
+        state.currentVehicle = action.payload?.driver_vehicle || state.currentVehicle
+        state.error = null
+      })
+      .addCase(CheckRideStatus.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload || action.error?.message
       })
   },
 })
-
 
 export default VehicleBookingSlice.reducer

@@ -130,6 +130,7 @@ function DriverVehicles() {
     try {
       if (hasVehicle) {
         await dispatch(UpdateDriverVehicle(data)).unwrap()
+
         alert('Vehicle updated successfully')
       } else {
         await dispatch(CreateDriverVehicle(data)).unwrap()

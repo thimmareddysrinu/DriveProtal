@@ -2,43 +2,41 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
 const BaseUrl = 'http://127.0.0.1:8000'
-export const CreateOwnerVehicle = createAsyncThunk(
-  'Vehicleowner/createvehicle',
-  async (formData, { rejectWithValue }) => {
-    console.log("sendingbackend updated profile:",formData)
-    try {
-      const token = localStorage.getItem('access')
-      const res = await axios.post(`${BaseUrl}/owner/vehicles/add/`,formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      console.log(res.data)
-      return res.data
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data || { message: 'Vehicle create By vehicleowner failed' }
-      )
-    }
-  }
-)
 export const Ownervehicle = createAsyncThunk(
   'owner/vehicle',
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('access')
-      const res = await axios.get(`${BaseUrl}/owner/vehicles/`, {
+      const res = await axios.get(`${BaseUrl}/owner/vehicles/add/`, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       })
-      console.log(res.data)
+       console.log(" vehicle get by vehicleowner:",res.data)
       return res.data
     } catch (err) {
       return rejectWithValue(
-        err.response?.data || { message: 'vehicleowner  vehicle get  failed' }
+        err.response?.data || { message: 'vehicleowner vehicle get failed' }
+      )
+    }
+  }
+)
+
+export const CreateOwnerVehicle = createAsyncThunk(
+  'Vehicleowner/createvehicle',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.post(`${BaseUrl}/owner/vehicles/add/`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log("create vehicle by vehicleowner:",res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Vehicle create by vehicleowner failed' }
       )
     }
   }
@@ -46,23 +44,24 @@ export const Ownervehicle = createAsyncThunk(
 
 export const UpdateOwnerVehicle = createAsyncThunk(
   'vehicleowner/updatevehicle',
-  async ({ formData,id }, { rejectWithValue }) => {
+  async ({ formData, id }, { rejectWithValue }) => {
+    console.log("Updating vehicle with ID:", formData)
     try {
       const token = localStorage.getItem('access')
       const res = await axios.patch(
-        `${BaseUrl}/owner/vehicles/${id}`,
+        `${BaseUrl}/owner/vehicles/${id}/`,
         formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
           },
         }
       )
+       console.log("updated vehicle by vehicleowner:",res.data)
       return res.data
     } catch (err) {
       return rejectWithValue(
-        err.response?.data || { message: 'Vehicle data update by vehicleowner failed' }
+        err.response?.data || { message: 'Vehicle data update failed' }
       )
     }
   }

@@ -2,6 +2,7 @@ from django.contrib.gis.db import models as gis_models
 from django.db import models
 from django.conf import settings
 from .Folders import *
+from django.contrib.gis.db import models
 
 class DriverProfile(models.Model):
     STATUS_CHOICES = (
@@ -9,6 +10,12 @@ class DriverProfile(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('suspended', 'Suspended'),
+    )
+    DRIVER_RIDE_STATUS_CHOICES = (
+       
+         ("free",'FREE'),
+         ("onride",'ONRIDE'),
+         
     )
     
     user = models.OneToOneField(
@@ -28,22 +35,26 @@ class DriverProfile(models.Model):
         choices=STATUS_CHOICES, 
         default='pending'
     )
+    driver_ride_status = models.CharField(
+        max_length=20, 
+        choices=DRIVER_RIDE_STATUS_CHOICES, 
+        default='free'
+    )
     aadhar_number = models.CharField(max_length=12, blank=True, null=True)
     aadhar_image = models.ImageField(upload_to='drivers/aadhar/', null=True, blank=True)
     pan_number = models.CharField(max_length=10, blank=True, null=True)
     pan_image = models.ImageField(upload_to='drivers/pan/', null=True, blank=True)
     
     # Work status
-    is_available = models.BooleanField(default=False)
-    is_online = models.BooleanField(default=False)
-    
-    # Current location (GIS)
-    current_location = gis_models.PointField(
-        geography=True,
-        null=True,
-        blank=True,
-        help_text="Current location of the driver"
+   
+    current_location = models.PointField(
+        geography=True,  # ✅ Use geography for accurate distance calculations
+              # ✅ WGS84 coordinate system
+        null=True, 
+        blank=True
     )
+    is_online = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=False)
     
     # Stats
     total_rides_completed = models.IntegerField(default=0)
@@ -86,17 +97,20 @@ class DriverVehicle(models.Model):
         
     ]
     VEHICLE_Type=[
-        ("bike","BIKE"),
-        ("scooty","SCOOTY"),
-        ("car","CAR"),
-        ("loory","LOORY")
+         ('bike',        'Bike'),
+         ('auto',        'Auto'),
+        ('scooty',      'Scooty'),
+        ('car_mini',    'Car – Mini '),
+        ('car_sedan',   'Car – Sedan '),
+        ('car_suv',     'Car – SUV '),
+        ('car_premium', 'Car - Premium '),
+        ('lorry','Lorry')
 
     ]
-    STATUS_CHIOCES=[
-        ("avaliable","AVALIABLE"),
-        ("notavaliable","NOTAVALIABLE"),
-        ("running","Running"),
-       
+    STATUS_CHOICES = [
+        ("available", "AVAILABLE"),        # Fixed spelling
+        ("notavailable", "NOTAVAILABLE"), 
+        ("running", "Running"),
     ]
       # Driver vehicle TYPE
     driver = models.ForeignKey(
@@ -128,7 +142,7 @@ class DriverVehicle(models.Model):
         upload_to=vehicle_photo_upload_path, null=True, blank=True)
      # stats
     is_active = models.CharField(
-        default='notavaliable', max_length=100, choices=STATUS_CHIOCES)
+        default='notavailable', max_length=100, choices=STATUS_CHOICES)
     is_verified = models.BooleanField(default=False)
     sharing_price = models.DecimalField(
          max_digits=10,
@@ -171,7 +185,7 @@ class DriverVehicle(models.Model):
     def __str__(self):
      return f"{self.driver.user}-----{self.brand} {self.vehiclemodel} - {self.registration_number}"
     def is_available_drvers(self):
-     return self.is_active == 'available' and self.is_verified
+     return self.is_active == 'avaliable' and self.is_verified
 
 
 # ─── Shared Ride ─────────────────────────────────────────────────────────────

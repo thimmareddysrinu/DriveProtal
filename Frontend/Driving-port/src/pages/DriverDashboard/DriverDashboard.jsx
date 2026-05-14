@@ -1,154 +1,301 @@
 import { useEffect, useRef, useState } from 'react'
 import { FaStar, FaRupeeSign } from 'react-icons/fa'
 import { useDispatch } from 'react-redux'
+import { DriverAcceptVehicleBooking,CheckRideStatus } from '../../store/slices/vehicleBooking/VehicleBooking'
 
 const DriverDashboard = () => {
-  const user = JSON.parse(localStorage.getItem("user"))
+  const user = JSON.parse(localStorage.getItem('user'))
   const dispatch = useDispatch()
 
   const wsRef = useRef(null)
-  const locationIntervalRef = useRef(null)
+  const reconnectTimeoutRef = useRef(null)
+  const pingIntervalRef = useRef(null)
+  const watchIdRef = useRef(null)
+  const intentionalCloseRef = useRef(false)
 
   const [rideAlert, setRideAlert] = useState([])
   const [countdown, setCountdown] = useState({})
-  const [isOnline, setIsOnline] = useState(false)
+  const [isOnline, setIsOnline] = useState(
+    localStorage.getItem('driverOnlineStatus') === 'true'
+  )
+  const [wsStatus, setWsStatus] = useState('disconnected')
 
-  const sendLocation = () => {
-    if (!navigator.geolocation) {
-      console.log("Geolocation not supported")
-      return
+  const sendMessage = (payload) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.log('WebSocket not open, skipping message:', payload)
+      return false
     }
 
-    if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      console.log("WebSocket not open")
+    ws.send(JSON.stringify(payload))
+    return true
+  }
+
+  const sendDriverStatus = (onlineStatus) => {
+    const sent = sendMessage({
+      type: 'driver_status',
+      is_online: onlineStatus,
+      is_available: onlineStatus,
+    })
+
+    if (sent) {
+      console.log('🚦 Driver status sent:', onlineStatus)
+    }
+  }
+
+  const sendLocation = (lat, lng) => {
+    const sent = sendMessage({
+      type: 'update_location',
+      lat,
+      lng,
+    })
+
+    if (sent) {
+      console.log('📍 Location sent:', lat, lng)
+    }
+  }
+
+  const requestAndSendCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      console.log('Geolocation not supported')
       return
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
-
-        wsRef.current.send(JSON.stringify({
-          type: "update_location",
-          lat: latitude,
-          lng: longitude
-        }))
-
-        console.log("location sent", latitude, longitude)
+        sendLocation(latitude, longitude)
       },
       (error) => {
-        console.log("geolocation error", error)
+        console.log('Geolocation error:', error)
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       }
     )
   }
 
-  const sendDriverStatus = (onlineStatus) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: "driver_status",
-        is_online: onlineStatus,
-        is_available: onlineStatus
-      }))
-    }
-  }
-
-  const [wsStatus, setWsStatus] = useState('disconnected') // 'connecting', 'connected', 'disconnected'
-
-useEffect(() => {
-  let reconnectTimeout
-
-  const connectWebSocket = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
-
-    const token = localStorage.getItem("access")
-    if (!token) {
-      console.log("No token, skipping WS")
+  const startLocationUpdates = () => {
+    if (!navigator.geolocation) {
+      console.log('Geolocation not supported')
       return
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws"
-    const ws = new WebSocket(`${protocol}://127.0.0.1:8000/ws/driver/?token=${token}`)
-  
-    wsRef.current = ws
-    setWsStatus('connecting')
+    if (watchIdRef.current !== null) return
 
-    ws.onopen = () => {
-      console.log("✅ WebSocket connected")
-      setWsStatus('connected')
-    }
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log("websocket message:", data)
-
-      if (data.type === "ride_request") {
-        setRideAlert((prev) => [...prev, data])
-        setCountdown((prev) => ({
-          ...prev,
-          [data.ride_id]: data.expires_in || 90,
-        }))
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        sendLocation(latitude, longitude)
+      },
+      (error) => {
+        console.log('Watch location error:', error)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000,
       }
-    }
+    )
 
-    ws.onerror = (error) => {
-      console.error("❌ WebSocket error:", error)
-      setWsStatus('disconnected')
-    }
+    console.log('🛰️ Location watch started')
+  }
 
-    ws.onclose = (event) => {
-      console.log("🔌 WebSocket closed", event.code)
-      wsRef.current = null
-      setWsStatus('disconnected')
-
-      // Auto-reconnect after 3 seconds (except if manual close)
-      if (event.code !== 1000) {
-        reconnectTimeout = setTimeout(connectWebSocket, 3000)
-      }
+  const stopLocationUpdates = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current)
+      watchIdRef.current = null
+      console.log('🛑 Location watch stopped')
     }
   }
 
-  connectWebSocket()
+  useEffect(() => {
+    let isMounted = true
 
-  return () => {
-    if (reconnectTimeout) clearTimeout(reconnectTimeout)
-    if (locationIntervalRef.current) {
-      clearInterval(locationIntervalRef.current)
-      locationIntervalRef.current = null
+    const connectWebSocket = () => {
+      const token = localStorage.getItem('access')
+      if (!token) {
+        console.log('❌ No access token found, cannot connect WebSocket')
+        return
+      }
+
+      const existing = wsRef.current
+      if (
+        existing &&
+        (existing.readyState === WebSocket.OPEN ||
+          existing.readyState === WebSocket.CONNECTING)
+      ) {
+        return
+      }
+
+      intentionalCloseRef.current = false
+
+      const wsUrl = `ws://127.0.0.1:8000/ws/driver/?token=${token}`
+      console.log('🔌 Connecting WebSocket to:', wsUrl)
+
+      const ws = new WebSocket(wsUrl)
+      wsRef.current = ws
+
+      if (isMounted) setWsStatus('connecting')
+
+      ws.onopen = () => {
+        if (!isMounted) return
+
+        setWsStatus('connected')
+        console.log('✅ WebSocket connected')
+
+        if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
+        pingIntervalRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }))
+          }
+        }, 30000)
+
+        const savedStatus = localStorage.getItem('driverOnlineStatus') === 'true'
+        if (savedStatus) {
+          sendDriverStatus(true)
+          requestAndSendCurrentLocation()
+          startLocationUpdates()
+        }
+      }
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        console.log('📩 WebSocket message:', data)
+
+        if (data.type === 'ride_request') {
+          setRideAlert((prev) => {
+            const exists = prev.some((item) => item.ride_id === data.ride_id)
+            return exists ? prev : [...prev, data]
+          })
+
+          setCountdown((prev) => ({
+            ...prev,
+            [data.ride_id]: data.expires_in || 90,
+          }))
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('❌ WebSocket error:', error)
+        if (isMounted) setWsStatus('disconnected')
+      }
+
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket closed:', event.code, event.reason)
+
+        if (wsRef.current === ws) {
+          wsRef.current = null
+        }
+
+        if (isMounted) {
+          setWsStatus('disconnected')
+        }
+
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current)
+          pingIntervalRef.current = null
+        }
+
+        if (!intentionalCloseRef.current && isMounted) {
+          console.log('🔄 Reconnecting in 3 seconds...')
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket()
+          }, 3000)
+        }
+      }
     }
-    
-    // Only close if we opened it
-    if (wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) {
-      wsRef.current.close(1000) // Normal closure
+
+    connectWebSocket()
+
+    return () => {
+      isMounted = false
+      intentionalCloseRef.current = true
+
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
+
+      stopLocationUpdates()
+
+      if (wsRef.current) {
+        const ws = wsRef.current
+        wsRef.current = null
+
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
+          ws.close(1000, 'Component unmount')
+        }
+      }
     }
-  }
-}, [])
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        const updated = { ...prev }
+
+        Object.keys(updated).forEach((rideId) => {
+          if (updated[rideId] > 0) {
+            updated[rideId] -= 1
+          } else {
+            delete updated[rideId]
+            setRideAlert((current) =>
+              current.filter((ride) => String(ride.ride_id) !== String(rideId))
+            )
+          }
+        })
+
+        return updated
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
 
   const toggleOnline = () => {
     const newStatus = !isOnline
     setIsOnline(newStatus)
-
-    sendDriverStatus(newStatus)
+    localStorage.setItem('driverOnlineStatus', String(newStatus))
 
     if (newStatus) {
-      sendLocation()
-
-      if (locationIntervalRef.current) {
-        clearInterval(locationIntervalRef.current)
-      }
-
-      locationIntervalRef.current = setInterval(() => {
-        sendLocation()
-      }, 10000)
+      sendDriverStatus(true)
+      requestAndSendCurrentLocation()
+      startLocationUpdates()
     } else {
-      if (locationIntervalRef.current) {
-        clearInterval(locationIntervalRef.current)
-        locationIntervalRef.current = null
-      }
+      sendDriverStatus(false)
+      stopLocationUpdates()
+    }
+  }
+
+  const handleAcceptedRide = async (ride) => {
+    try {
+      const res = await dispatch(DriverAcceptVehicleBooking(ride.ride_id)).unwrap()
+
+      console.log('ACCEPT FULL RESPONSE =>', res)
+      console.log('ACCEPT RIDE =>', res?.ride)
+      console.log('ACCEPT STATUS =>', res?.status)
+      if (res?.ride?.status === 'driver_assigned') {
+      await dispatch(CheckRideStatus(res?.ride?.id || ride.ride_id)).unwrap()
+    }
+      setRideAlert((prev) => prev.filter((r) => r.ride_id !== ride.ride_id))
+
+      setCountdown((prev) => {
+        const updated = { ...prev }
+        delete updated[ride.ride_id]
+        return updated
+      })
+
+      sendMessage({
+        type: 'ride_accept_ack',
+        ride_id: ride.ride_id,
+      })
+    } catch (error) {
+      console.error('❌ Ride acceptance failed:', error)
+      alert(error?.error || error?.message || 'Ride acceptance failed')
     }
   }
 
@@ -160,19 +307,39 @@ useEffect(() => {
           <p style={{ color: '#A0AEC0' }}>Welcome, {user?.phone_number || 'Driver'}</p>
         </div>
 
-        <button
-          onClick={toggleOnline}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            background: isOnline ? '#48BB78' : '#E53E3E',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          {isOnline ? '🟢 Online' : '🔴 Offline'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              color:
+                wsStatus === 'connected'
+                  ? '#48BB78'
+                  : wsStatus === 'connecting'
+                  ? '#F6AF12'
+                  : '#E53E3E',
+            }}
+          >
+            {wsStatus === 'connected'
+              ? '🟢 WS Connected'
+              : wsStatus === 'connecting'
+              ? '🟡 Connecting...'
+              : '🔴 WS Disconnected'}
+          </span>
+
+          <button
+            onClick={toggleOnline}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              background: isOnline ? '#48BB78' : '#E53E3E',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {isOnline ? '🟢 Online' : '🔴 Offline'}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '24px' }}>
@@ -204,20 +371,39 @@ useEffect(() => {
           marginTop: '32px',
           padding: '20px',
           borderRadius: '12px',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.08)'
+          background: 'transparent',
+          border: '1px solid rgba(237, 196, 59, 0.86)',
+          width: '400px',
         }}
       >
         {rideAlert.length === 0 ? (
           <p style={{ color: '#A0AEC0', textAlign: 'center' }}>No ride requests yet...</p>
         ) : (
           rideAlert.map((ride) => (
-            <div key={ride.ride_id} style={{ marginBottom: '16px', padding: '16px', background: '#1b1b2a', borderRadius: '10px' }}>
+            <div
+              key={ride.ride_id}
+              style={{
+                marginBottom: '16px',
+                padding: '16px',
+                background: 'transparent',
+                borderRadius: '10px',
+              }}
+            >
               <h4>Ride Request</h4>
+              <hr />
               <p>Pickup: {ride.pickup}</p>
               <p>Drop: {ride.drop}</p>
               <p>Vehicle: {ride.vehicle_type}</p>
               <p>Customer: {ride.customer_name}</p>
+              <p>Distance: {ride.distance_km} Km</p>
+              <p>Ride Mode: {ride.ride_mode}</p>
+              <p>Ride Amount: {ride.price_breakdown?.ride_price}</p>
+              <p>Expires in: {countdown[ride.ride_id] ?? 0}s</p>
+
+              <button className="btn btn-warning me-3" onClick={() => handleAcceptedRide(ride)}>
+                Accept
+              </button>
+              <button className="btn btn-danger">Rejected</button>
             </div>
           ))
         )}

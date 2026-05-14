@@ -12,6 +12,7 @@ import drivervehicleReducer from './slices/Driver/DriverVehicle'
 
 import vehicleownerprofileReducer from './slices/Owner/Ownerprofile'
 import vehicleownervehicleReducer from './slices/Owner/OwnerVehicle'
+import adminOwnerVehiclelistReducer from './slices/Admin/AdminOwnerVehicleApproval'
 export const store = configureStore({
   reducer: {
    register: registerReducer,
@@ -19,10 +20,12 @@ export const store = configureStore({
    mpinset: mpinSetReducer,
    login: loginReducer,
    Vehiclesearch:vehiclesearchReducer,
-   Vehiclebooks:vehiclesearchReducer,
+   Vehiclebooks:vehiclebooksReducer,
   //  admin store
 
-  adminlist:adminlistReducer,
+  adminDriverlist:adminlistReducer,
+  adminOwnerVehiclelist:adminOwnerVehiclelistReducer,
+  
 
   // driver store
 

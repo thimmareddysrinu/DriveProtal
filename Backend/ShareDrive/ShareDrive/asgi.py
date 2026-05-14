@@ -1,16 +1,21 @@
 import os
-from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from Driver.routing import websocket_urlpatterns
-from Driver.middleware import JWTAuthMiddleware
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ShareDrive.settings')
+django.setup()
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ShareDrive.settings")
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
+from django.core.asgi import get_asgi_application
+from Driver.middleware import JWTAuthMiddleware
+import Driver.routing
 
 django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": JWTAuthMiddleware(
-        URLRouter(websocket_urlpatterns)
+    "websocket": AllowedHostsOriginValidator(
+        JWTAuthMiddleware(
+            URLRouter(Driver.routing.websocket_urlpatterns)
+        )
     ),
 })

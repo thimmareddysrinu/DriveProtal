@@ -93,9 +93,81 @@ export const AdminProfileApproval = createAsyncThunk(
   }
 )
 
+
+
+export const AdminOwnerVehicleList = createAsyncThunk(
+  'admin/OwnerVehicleList',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.get(`${BaseUrl}/owner/admin/vehicles/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log(res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Driver list failed' }
+      )
+    }
+  }
+)
+
+export const AdminOwnervehicleDetails = createAsyncThunk(
+  'admin/OwnerVehicleDetails',
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.get(`${BaseUrl}/owner/admin/vehicle/${id}/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log(res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Driver detail failed' }
+      )
+    }
+  }
+)
+
+export const AdminOwnerVehicleApproval = createAsyncThunk(
+  'admin/OwnerVehicleApproval',
+  async ({ id, action }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.patch(
+        `${BaseUrl}/owner/admin/vehicles/${id}/approval/`,
+        { action },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return { id, action, data: res.data }
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Vehicle approval failed' }
+      )
+    }
+  }
+)
+
+
+
 const initialState = {
   drivers: [], // Changed from vehicles
-  driverDetail: null, // Changed from singleVehicle
+  driverDetail: null,
+  ownersVehicles: [], // Changed from vehicles
+  ownerVehicleDetail: null, // Changed from singleVehicle
   loading: false,
   error: null,
   actionLoading: false,
@@ -173,6 +245,61 @@ export const AdminVehiclelistSlice = createSlice({
       .addCase(AdminProfileApproval.rejected, (state, action) => {
         state.actionLoading = false
         state.error = action.payload?.message || 'Profile approval failed'
+      })
+
+
+
+
+
+       // Vehicle Owner vehicle List
+      .addCase(AdminOwnerVehicleList.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(AdminOwnerVehicleList.fulfilled, (state, action) => {
+        state.loading = false
+        state.ownersVehicles = Array.isArray(action.payload) ? action.payload : []
+      })
+      .addCase(AdminOwnerVehicleList.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message || 'Vehicleowner vehicle list failed'
+      })
+
+       // ownervehicle Vehicle Detail
+      .addCase(AdminOwnervehicleDetails.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(AdminOwnervehicleDetails.fulfilled, (state, action) => {
+        state.loading = false
+        state.ownerVehicleDetail = action.payload
+      })
+      .addCase(AdminOwnervehicleDetails.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message || 'OwnerVehicle vehicle  detail failed'
+      })
+
+      // OwnerVehicle Approval
+      .addCase(AdminOwnerVehicleApproval.pending, (state) => {
+        state.actionLoading = true
+        state.error = null
+      })
+      .addCase(AdminOwnerVehicleApproval.fulfilled, (state, action) => {
+        state.actionLoading = false
+        const { id, action: reviewAction } = action.payload
+        
+        // Update in ownervehicle vehicles list
+        if (state.ownerVehicleDetail) {
+          const vehicle = state.ownerVehicleDetail.find((v) => v.id === id)
+          if (vehicle) {
+            vehicle.is_verified = reviewAction === 'approve'
+            vehicle.is_active = reviewAction === 'approve' ? 'available' : 'not available'
+          }
+        }
+      })
+      .addCase(AdminOwnerVehicleApproval.rejected, (state, action) => {
+        state.actionLoading = false
+        state.error = action.payload?.message || 'OwnerVehicle vehicleapproval failed'
       })
   },
 })

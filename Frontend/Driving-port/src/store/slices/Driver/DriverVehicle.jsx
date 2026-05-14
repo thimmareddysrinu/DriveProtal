@@ -45,7 +45,7 @@ export const Drivervehicle = createAsyncThunk(
 
 export const UpdateDriverVehicle = createAsyncThunk(
   'driver/updatevehicle',
-  async ({ formData }, { rejectWithValue }) => {
+  async (formData , { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('access')
       const res = await axios.patch(

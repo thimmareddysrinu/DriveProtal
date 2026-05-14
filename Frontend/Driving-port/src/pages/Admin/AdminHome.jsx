@@ -3,24 +3,32 @@ import { FaStar, FaRupeeSign } from 'react-icons/fa'
 import { useSelector, useDispatch } from 'react-redux'
 import { AdminDriverList } from '../../store/slices/Admin/AdminvehicleApprove'
 import { useNavigate } from 'react-router-dom'
+import { AdminOwnerVehicleList } from '../../store/slices/Admin/AdminOwnerVehicleApproval'
 
 function AdminHome() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { drivers, loading, error } = useSelector((state) => state.adminlist)
- 
+  const { drivers, loading, error,actionLoading } = useSelector((state) => state.adminDriverlist)
+  const { ownersVehicles, ownloading, ownerror } = useSelector((state) => state.adminOwnerVehiclelist)
   useEffect(() => {
     dispatch(AdminDriverList())
+     dispatch(AdminOwnerVehicleList())
   }, [dispatch])
 
   const refresh = () => {
     dispatch(AdminDriverList())
+     dispatch(AdminOwnerVehicleList())
   }
 
-  const onclick = (id) => {
-    navigate(`/admin/approval/${id}`)
+  const driveronclick = (id) => {
+    navigate(`/admin/driver-approval/${id}`)
+  }
+
+  const ownerVehicleonclick = (id) => {
+    navigate(`/admin/owner-vehicle-approval/${id}`)
   }
   console.log(drivers)
+  console.log(ownersVehicles)
 
   return (
     <div style={{ minHeight: '100vh', background: '#0F0F1A', color: '#fff', padding: '24px' }}>
@@ -43,19 +51,85 @@ function AdminHome() {
         ))}
       </div>
 
-      <div style={{
+     <div
+  style={{
+    marginTop: '32px',
+    padding: '20px',
+    borderRadius: '12px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.08)'
+  }}
+>
+  <h3 className="text-center text-warning">Driver Vehicles</h3>
+  <button className="btn btn-warning m-3" onClick={refresh}>Refresh</button>
+
+  {loading && <p>Loading drivers...</p>}
+  {error && <p style={{ color: 'red' }}>{error}</p>}
+  {!loading && drivers.length === 0 && <p>No drivers found</p>}
+
+  {!loading && drivers.length > 0 && (
+    <table className="table table-dark">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Driver Name</th>
+          <th scope="col">Phone</th>
+          <th scope="col">Status</th>
+          <th scope="col">Total Vehicles</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {drivers.map((driver) => (
+          <tr key={driver.id}>
+            <td>{driver.id}</td>
+            <td>{driver.full_name}</td>
+            <td>{driver.phone_number}</td>
+            <td>
+              <span
+                className={`badge ${
+                  driver.verification_status === 'approved'
+                    ? 'bg-success'
+                    : 'bg-warning text-dark'
+                }`}
+              >
+                {driver.verification_status}
+              </span>
+            </td>
+            <td>{driver.vehicles?.length || 0}</td>
+            <td>
+              {driver.verification_status !== 'approved' ? (
+                <button
+                  className="btn btn-warning"
+                   onClick={() => navigate(`/admin/driver-approval/${driver.id}`)}
+            
+                >
+                  View
+                </button>
+              ) : (
+                <button className="btn btn-success">Approved</button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+       <div style={{
         marginTop: '32px', padding: '20px', borderRadius: '12px',
         background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)'
       }}>
-        <button className='btn btn-warning me-3' onClick={refresh}>Refresh</button>
+        <h2 className='text-center text-warning'> VehicleOwner Vehicles </h2>
+        <button className='btn btn-warning ms-3 mb-4' onClick={refresh}>Refresh</button>
         
-        {loading && <p>Loading drivers...</p>}
+        {loading && <p>Loading owners' vehicles...</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
-        {!loading && drivers.length === 0 && <p>No drivers found</p>}
+        {!loading && ownersVehicles.length === 0 && <p>No owners' vehicles found</p>}
 
-        {drivers.map((driver) => (
-          <div key={driver.id}>
+        {ownersVehicles.map((vehicle) => (
+          <div key={vehicle.id}>
             <table className="table table-dark">
               <thead>
                 <tr>
@@ -69,20 +143,22 @@ function AdminHome() {
               </thead>
               <tbody>
                 <tr>
-                  <td>{driver.id}</td>
-                  <td>{driver.full_name}</td>
-                  <td>{driver.phone_number}</td>
+                  <td>{vehicle.id}</td>
+                  <td>{vehicle.owner_name}</td>
+                  <td>{vehicle.
+owner_profile?.phone_number}</td>
                   <td>
-                    <span className={`badge ${driver.verification_status === 'approved' ? 'bg-success' : 'bg-warning'}`}>
-                      {driver.verification_status}
+                    <span className={`badge ${vehicle.owner_profile?.verified === true ? 'bg-success' : 'bg-warning'}`}>
+                      {vehicle.owner_profile?.verified === true ? 'approved':'pending'}
                     </span>
                   </td>
-                  <td>{driver.vehicles?.length || 0}</td>
+                  <td>{vehicle.vehicles?.length || 0}</td>
                   <td>
-                    {driver.verification_status !== 'approved' ? (
+                    {vehicle.owner_profile?.verified !== true ? (
                       <button
                         className='btn btn-warning'
-                        onClick={() => onclick(driver.id)}
+                         onClick={() => navigate(`/admin/owner-vehicle-approval/${vehicle.id}`)}
+            
                       >
                         View
                       </button>

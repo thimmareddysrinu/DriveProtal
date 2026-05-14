@@ -12,8 +12,8 @@ urlpatterns = [
          VehicleCreationView.as_view(),          name='owner-vehicle-add'),
           path('vehicles/<int:id>/',
          VehicleCreationView.as_view(),          name='owner-vehicle-update'),
-    path('vehicles/',
-         OwnerVehicleListView.as_view(),         name='owner-vehicle-list'),
+#     path('vehicles/',
+#          OwnerVehicleListView.as_view(),         name='owner-vehicle-list'),
 
     # ── Admin Vehicle Management ──────────────────────────────────────
     path('admin/vehicles/',

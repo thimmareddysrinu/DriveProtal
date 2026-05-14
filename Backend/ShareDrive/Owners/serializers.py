@@ -4,7 +4,7 @@ from .models import VehicleOwnerProfile, VehicleRental
 
 class VehicleOwnerProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(source='user.phone_number', read_only=True)
-    full_name = serializers.CharField(source='user.full_name', read_only=True)
+   
 
     class Meta:
         model = VehicleOwnerProfile
@@ -13,7 +13,9 @@ class VehicleOwnerProfileSerializer(serializers.ModelSerializer):
 
 
 class VehicleRentalSerializer(serializers.ModelSerializer):
-    owner_name = serializers.CharField(source='owner.user.full_name', read_only=True)
+    owner_name = serializers.CharField(source='owner.full_name', read_only=True)
+    owner_profile = VehicleOwnerProfileSerializer(source='owner', read_only=True)
+
 
     class Meta:
         model = VehicleRental

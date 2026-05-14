@@ -1,8 +1,21 @@
 import { FaTruck, FaChartBar } from 'react-icons/fa'
-import { useSelector } from 'react-redux'
+import { useEffect,useState } from 'react'
+import { useSelector,useDispatch } from 'react-redux'
+import {
+  VehicleownerProfile, UpdateVehicleownerProfile
+
+} from '../../store/slices/Owner/Ownerprofile'
+
 
 const OwnerDashboard = () => {
   const { user } = useSelector(state => state.login)
+  const dispatch = useDispatch()
+  const { OwnerProf, loading, error, updateLoading } = useSelector(
+    (state) => state.vehicleownerprofile
+  )
+    useEffect(() => {
+    dispatch(VehicleownerProfile())
+  }, [dispatch])
 
   return (
     <div style={{ minHeight: '100vh', background: '#0F0F1A', color: '#fff', padding: '24px' }}>

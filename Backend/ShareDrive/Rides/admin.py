@@ -11,41 +11,32 @@ class VehiclePricingConfigAdmin(admin.ModelAdmin):
     ordering      = ['vehicle_type', 'ride_mode']
 
 
+from django.contrib import admin
+from .models import Ride
+
 @admin.register(Ride)
 class RideAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'customer', 'vehicle_type', 'ride_mode',
-        'distance_km', 'base_fare', 'ride_price', 'tax_amount', 'total_price',
-        'status', 'created_at',
-    ]
-    list_filter   = ['vehicle_type', 'ride_mode', 'status']
-    search_fields = ['customer__user__phone_number', 'start_address', 'end_address']
-    readonly_fields = [
-        'distance_km', 'base_fare', 'ride_price', 'tax_amount', 'total_price',
-        'start_point', 'end_point', 'created_at', 'updated_at',
-    ]
-    ordering = ['-created_at']
-
-    fieldsets = (
-        ('Customer & Driver', {
-            'fields': ('customer', 'driver_vehicle')
-        }),
-        ('Trip Details', {
-            'fields': (
-                'vehicle_type', 'ride_mode', 'status',
-                'start_lat', 'start_lon', 'start_address', 'start_point',
-                'end_lat',   'end_lon',   'end_address',   'end_point',
-            )
-        }),
-        ('Pricing Breakdown', {
-            'fields': ('distance_km', 'base_fare', 'ride_price', 'tax_amount', 'total_price')
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at')
-        }),
+    readonly_fields = (
+        'status',
+        'total_price',
+        'start_address',
+        'end_address',
+        'created_at',
+        'customer_name',
+        'driver_name',
     )
 
+    def customer_name(self, obj):
+        if obj.customer and obj.customer.user:
+            return obj.customer.user.phone_number
+        return "-"
+    customer_name.short_description = "Customer"
 
+    def driver_name(self, obj):
+        if obj.driver and obj.driver.user:
+            return obj.driver.user.phone_number
+        return "-"
+    driver_name.short_description = "Driver"
 @admin.register(RideTaxRecord)
 class RideTaxRecordAdmin(admin.ModelAdmin):
     list_display  = ['id', 'ride', 'tax_amount', 'distance_km', 'tax_per_km', 'settled', 'created_at']

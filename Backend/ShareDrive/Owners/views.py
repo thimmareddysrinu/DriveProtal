@@ -43,22 +43,46 @@ class VehicleOwnerProfileView(APIView):
 
 class VehicleCreationView(APIView):
     permission_classes = [IsAuthenticated]
+    def get(self, request):
+        owner_profile = get_owner_profile(request)
+        vehicles = VehicleRental.objects.filter(owner=owner_profile)
+        serializer = VehicleRentalSerializer(vehicles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         try:
             owner_profile = VehicleOwnerProfile.objects.get(user=request.user)
         except VehicleOwnerProfile.DoesNotExist:
-            return Response({"error": "Owner profile not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response(
+                {"error": "Owner profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        print("request.data =>", request.data)
+        print("request.FILES =>", request.FILES)
 
         serializer = VehicleRentalSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save(owner=owner_profile)
+            vehicle = serializer.save(owner=owner_profile)
             return Response(
-                {"message": "Vehicle submitted for admin verification"},
+                {
+                    "message": "Vehicle submitted successfully",
+                    "data": VehicleRentalSerializer(vehicle).data
+                },
                 status=status.HTTP_201_CREATED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        print("serializer.errors =>", serializer.errors)
+
+        return Response(
+            {
+                "message": "Validation failed",
+                "errors": serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+   
     def patch(self, request,id):
         try:
             owner_profile = VehicleOwnerProfile.objects.get(user=request.user)
@@ -78,15 +102,11 @@ class VehicleCreationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OwnerVehicleListView(APIView):
-    """Owner sees their own vehicles."""
-    permission_classes = [IsAuthenticated]
+# class OwnerVehicleListView(APIView):
+#     """Owner sees their own vehicles."""
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        owner_profile = get_owner_profile(request)
-        vehicles = VehicleRental.objects.filter(owner=owner_profile)
-        serializer = VehicleRentalSerializer(vehicles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+   
 
 
 # ─── Admin Vehicle Management ─────────────────────────────────────────────────
@@ -112,30 +132,44 @@ class VehicleDetailsAdminView(APIView):
         serializer = VehicleRentalSerializer(vehicle)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class VehicleApprovalAdminView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, vehicle_id):
         if not request.user.is_staff:
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         vehicle = get_object_or_404(VehicleRental, id=vehicle_id)
+        owner_profile = vehicle.owner
         action = request.data.get("action")
 
         if action == "approve":
             vehicle.is_verified = True
             vehicle.is_active = "available"
+            owner_profile.verified = True
+            owner_profile.save()
+
         elif action == "reject":
             vehicle.is_verified = False
             vehicle.is_active = "unavaliable"
+            owner_profile.verified = False
+            owner_profile.save()
+
         else:
-            return Response({"error": "action must be 'approve' or 'reject'"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "action must be 'approve' or 'reject'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         vehicle.save()
-        return Response({"message": "Admin review updated"}, status=status.HTTP_200_OK)
 
-
+        return Response(
+            {"message": "Admin review updated successfully"},
+            status=status.HTTP_200_OK
+        )
 # # ─── Customer — Browse & Search Rental Vehicles ───────────────────────────────
 
 # class AvailableRentalVehiclesView(APIView):

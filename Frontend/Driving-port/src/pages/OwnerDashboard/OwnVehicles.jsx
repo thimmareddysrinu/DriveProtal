@@ -19,10 +19,12 @@ function OwnVehicles() {
     vehiclemodel: '',
     year: '',
     colour: '',
+    owner_name:"",
     registration_number: '',
     seat_capacity: 1,
-    fuel_type: '',
-    transmission_type: '',
+   transmission_type: 'manual',   // ✅ was ''
+  is_active: 'available', 
+  fuel_type:'petrol',
     has_ac: false,
     has_gps: false,
     has_music_system: false,
@@ -30,7 +32,7 @@ function OwnVehicles() {
     sharing_price: '',
     extra_km_charge: '',
     ride_type: 'notmention',
-    is_active: 'notavaliable',
+    
     is_verified: false,
     rc_book_image: null,
     insurance_image: null,
@@ -63,7 +65,7 @@ function OwnVehicles() {
     pollution_expiary: null,
     vehicle_front: null,
     vehicle_right: null,
-    vehicle_left: null,
+    Vehicle_left: null,
     vehicle_back: null,
     vehicle_seats_front: null,
     vehicle_trumpat: null,
@@ -74,51 +76,44 @@ function OwnVehicles() {
     dispatch(Ownervehicle())
   }, [dispatch])
 
-  const hasVehicle = !!OwnerVeh?.id
-  const currentVehicleData = hasVehicle ? OwnerVeh : null
+// Replace these two lines:
+const hasVehicle = Array.isArray(OwnerVeh) ? OwnerVeh.length > 0 : !!OwnerVeh?.id
+const currentVehicleData = Array.isArray(OwnerVeh) ? OwnerVeh[0] : OwnerVeh || null
 
-  useEffect(() => {
-    if (OwnerVeh?.id) {
-      setFormData({
-        vehicle: OwnerVeh.vehicle || "",
-        brand: OwnerVeh.brand || "",
-        vehiclemodel: OwnerVeh.vehiclemodel || "",
-        year: OwnerVeh.year || "",
-        colour: OwnerVeh.colour || "",
-        registration_number: OwnerVeh.registration_number || "",
-        seat_capacity: OwnerVeh.seat_capacity || "",
-        fuel_type: OwnerVeh.fuel_type || "",
-        transmission_type: OwnerVeh.transmission_type || "",
-        has_ac: OwnerVeh.has_ac || false,
-        has_gps: OwnerVeh.has_gps || false,
-        has_music_system: OwnerVeh.has_music_system || false,
-        has_bluetooth: OwnerVeh.has_bluetooth || false,
-        sharing_price: OwnerVeh.sharing_price || "",
-        extra_km_charge: OwnerVeh.extra_km_charge || "",
-        ride_type: OwnerVeh.ride_type || 'notmention',
-        is_active: OwnerVeh.is_active || 'notavaliable',
-        is_verified: OwnerVeh.is_verified || false,
-        rc_book_image: null,
-        insurance_image: null,
-        insurance_expiary: null,
-        pollution_image: null,
-        pollution_expiary: null,
-        vehicle_front: null,
-        vehicle_right: null,
-        vehicle_left: null,
-        vehicle_back: null,
-        vehicle_seats_front: null,
-        vehicle_trumpat: null,
-        vehicle_Seats_back: null,
-        rental_price_per_hour: OwnerVeh.rental_price_per_hour || 0,
-        rental_price_per_day: OwnerVeh.rental_price_per_day || 0,
-        security_depoist: OwnerVeh.security_depoist || 0,
-        min_rental_hours: OwnerVeh.min_rental_hours || 0,
-        max_rental_days: OwnerVeh.max_rental_days || 0,
-        km_limit_per_day: OwnerVeh.km_limit_per_day || 0,
-      })
-    }
-  }, [OwnerVeh])
+useEffect(() => {
+  if (Array.isArray(OwnerVeh) && OwnerVeh.length > 0) {
+    const vehicle = OwnerVeh[0]
+
+    setFormData((prev) => ({
+      ...prev,
+      vehicle: vehicle.vehicle ?? 'bike',
+      brand: vehicle.brand ?? '',
+      owner_name: vehicle.owner_name ?? '',
+      vehiclemodel: vehicle.vehiclemodel ?? '',
+      year: vehicle.year ?? '',
+      colour: vehicle.colour ?? '',
+      registration_number: vehicle.registration_number ?? '',
+      seat_capacity: vehicle.seat_capacity ?? 1,
+      fuel_type: vehicle.fuel_type ?? 'petrol',
+      transmission_type: vehicle.transmission_type ?? 'manual',
+      has_ac: vehicle.has_ac ?? false,
+      has_gps: vehicle.has_gps ?? false,
+      has_music_system: vehicle.has_music_system ?? false,
+      has_bluetooth: vehicle.has_bluetooth ?? false,
+      sharing_price: vehicle.sharing_price ?? '',
+      extra_km_charge: vehicle.extra_km_charge ?? '',
+      ride_type: vehicle.ride_type ?? 'notmention',
+      is_active: vehicle.is_active ?? 'available',
+      is_verified: vehicle.is_verified ?? false,
+      rental_price_per_hour: vehicle.rental_price_per_hour ?? 0,
+      rental_price_per_day: vehicle.rental_price_per_day ?? 0,
+      security_depoist: vehicle.security_depoist ?? 0,
+      min_rental_hours: vehicle.min_rental_hours ?? 0,
+      max_rental_days: vehicle.max_rental_days ?? 0,
+      km_limit_per_day: vehicle.km_limit_per_day ?? 0,
+    }))
+  }
+}, [OwnerVeh])
 
   const handleChange = (e) => {
     const { name, value, files, type, checked } = e.target
@@ -146,12 +141,13 @@ function OwnVehicles() {
     }
   }
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault()
 
   const data = new FormData()
   data.append('vehicle', formData.vehicle)
   data.append('brand', formData.brand)
+  data.append('owner_name', formData.owner_name)
   data.append('vehiclemodel', formData.vehiclemodel)
   data.append('year', formData.year)
   data.append('colour', formData.colour)
@@ -176,30 +172,34 @@ function OwnVehicles() {
   if (formData.sharing_price !== '') data.append('sharing_price', formData.sharing_price)
   if (formData.extra_km_charge !== '') data.append('extra_km_charge', formData.extra_km_charge)
 
-  if (formData.rc_book_image) data.append('rc_book_image', formData.rc_book_image)
-  if (formData.insurance_image) data.append('insurance_image', formData.insurance_image)
-  if (formData.insurance_expiary) data.append('insurance_expiary', formData.insurance_expiary)
-  if (formData.pollution_image) data.append('pollution_image', formData.pollution_image)
-  if (formData.pollution_expiary) data.append('pollution_expiary', formData.pollution_expiary)
-  if (formData.vehicle_front) data.append('vehicle_front', formData.vehicle_front)
-  if (formData.vehicle_right) data.append('vehicle_right', formData.vehicle_right)
-  if (formData.vehicle_left) data.append('vehicle_left', formData.vehicle_left)
-  if (formData.vehicle_back) data.append('vehicle_back', formData.vehicle_back)
-  if (formData.vehicle_seats_front) data.append('vehicle_seats_front', formData.vehicle_seats_front)
-  if (formData.vehicle_trumpat) data.append('vehicle_trumpat', formData.vehicle_trumpat)
-  if (formData.vehicle_Seats_back) data.append('vehicle_Seats_back', formData.vehicle_Seats_back)
+  // ✅ FIXED: != null instead of truthy check
+  if (formData.rc_book_image != null) data.append('rc_book_image', formData.rc_book_image)
+  if (formData.insurance_image != null) data.append('insurance_image', formData.insurance_image)
+  if (formData.insurance_expiary != null) data.append('insurance_expiary', formData.insurance_expiary)
+  if (formData.pollution_image != null) data.append('pollution_image', formData.pollution_image)
+  if (formData.pollution_expiary != null) data.append('pollution_expiary', formData.pollution_expiary)
+  if (formData.vehicle_front != null) data.append('vehicle_front', formData.vehicle_front)
+  if (formData.vehicle_right != null) data.append('vehicle_right', formData.vehicle_right)
+  if (formData.vehicle_left != null) data.append('vehicle_left', formData.vehicle_left)
+  if (formData.vehicle_back != null) data.append('vehicle_back', formData.vehicle_back)
+  if (formData.vehicle_seats_front != null) data.append('vehicle_seats_front', formData.vehicle_seats_front)
+  if (formData.vehicle_trumpat != null) data.append('vehicle_trumpat', formData.vehicle_trumpat)
+  if (formData.vehicle_Seats_back != null) data.append('vehicle_Seats_back', formData.vehicle_Seats_back)
 
   try {
-    if (hasVehicle) {
-      await dispatch(UpdateOwnerVehicle(data)).unwrap()
+    if (hasVehicle && currentVehicleData?.id) {
+      await dispatch(UpdateOwnerVehicle({
+        id: currentVehicleData.id,
+        formData: data
+      })).unwrap()
       alert('Vehicle updated successfully')
     } else {
       await dispatch(CreateOwnerVehicle(data)).unwrap()
       alert('Vehicle created successfully')
     }
-
     dispatch(Ownervehicle())
   } catch (err) {
+    console.error('Full error:', err)  // ✅ Better debugging
     alert(err?.error || err?.message || 'Vehicle operation failed')
   }
 }
@@ -309,11 +309,19 @@ function OwnVehicles() {
                 className="form-control"
                 value={formData.vehicle}
                 onChange={handleChange}
+                style={{"color":"black"}}
+
+
+                
               >
-                <option value="bike">Bike</option>
+                <option cl value="bike">Bike</option>
                 <option value="scooty">Scooty</option>
-                <option value="car">Car</option>
-                <option value="loory">Lorry</option>
+                <option value="sedan">Sedan</option>
+                <option value="mini">Mini Car</option>
+                 <option value="luxury">Luxury Car</option>
+                <option value="hatchback">Hatchback</option>
+                <option value="suv">Suv Car</option>
+               
               </select>
             </div>
 
@@ -324,6 +332,16 @@ function OwnVehicles() {
                 name="brand"
                 className="form-control"
                 value={formData.brand}
+                onChange={handleChange}
+              />
+            </div>
+             <div className="col-md-6 mb-3">
+              <label>Owner Nmae</label>
+              <input
+                type="text"
+                name="owner_name"
+                className="form-control"
+                value={formData.owner_name}
                 onChange={handleChange}
               />
             </div>
@@ -371,6 +389,37 @@ function OwnVehicles() {
                 onChange={handleChange}
               />
             </div>
+            
+          
+             
+              <div className="col-md-6 mb-3">
+              <label>Transmission Type</label>
+              <select
+                name="transmission_type"
+                className="form-control"
+                value={formData.transmission_type}
+                onChange={handleChange}
+              >
+                <option value="manual">Manual</option>
+                <option value="automatic">Automatic</option>
+                
+              </select>
+            </div>
+             <div className="col-md-6 mb-3">
+              <label>Fuel Type</label>
+              <select
+                name="fuel_type"
+                className="form-control"
+                value={formData.fuel_type}
+                onChange={handleChange}
+              >
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+                <option value="cng">CNG</option>
+                <option value="electric">Electric</option>
+                
+              </select>
+            </div>
 
             <div className="col-md-6 mb-3">
               <label>Seat Capacity</label>
@@ -388,7 +437,7 @@ function OwnVehicles() {
               <label>Sharing Price (₹)</label>
               <input
                 type="number"
-                step="0.01"
+                
                 name="sharing_price"
                 className="form-control"
                 value={formData.sharing_price}
@@ -396,45 +445,75 @@ function OwnVehicles() {
               />
             </div>
 
-            <div className="col-md-6 mb-3">
-              <label>Extra KM Charge (₹)</label>
+          
+              <div className="col-md-6 mb-3">
+              <label>Security Depoist (₹)</label>
               <input
                 type="number"
-                step="0.01"
-                name="extra_km_charge"
+                step="1"
+                name="security_depoist"
                 className="form-control"
-                value={formData.extra_km_charge}
+                value={formData.security_depoist}
+                onChange={handleChange}
+              />
+            </div>
+               <div className="col-md-6 mb-3">
+              <label>Rental Price per Hour (₹)</label>
+              <input
+                type="number"
+               
+                name="rental_price_per_hour"
+                className="form-control"
+                value={formData.rental_price_per_hour}
+                onChange={handleChange}
+              />
+            </div>
+                <div className="col-md-6 mb-3">
+              <label>Rental Price per Day </label>
+              <input
+                type="number"
+              
+                name="rental_price_per_day"
+                className="form-control"
+                value={formData.rental_price_per_day}
+                onChange={handleChange}
+              />
+            </div>
+              <div className="col-md-6 mb-3">
+              <label>Min Rental Hours</label>
+              <input
+                type="number"
+              
+                name="min_rental_hours"
+                className="form-control"
+                value={formData.min_rental_hours}
+                onChange={handleChange}
+              />
+            </div>
+               <div className="col-md-6 mb-3">
+              <label>Max Rental Days</label>
+              <input
+                type="number"
+               
+                name="max_rental_days"
+                className="form-control"
+                value={formData.max_rental_days}
                 onChange={handleChange}
               />
             </div>
 
-            <div className="col-md-6 mb-3">
-              <label>Ride Type</label>
-              <select
-                name="ride_type"
-                className="form-control"
-                value={formData.ride_type}
-                onChange={handleChange}
-              >
-                <option value="sharing">Sharing</option>
-                <option value="fully">Fully</option>
-                <option value="notmention">Not Mentioned</option>
-              </select>
-            </div>
+           
 
             <div className="col-md-6 mb-3">
-              <label>Status</label>
-              <select
-                name="is_active"
-                className="form-control"
-                value={formData.is_active}
-                onChange={handleChange}
-              >
-                <option value="avaliable">Available</option>
-                <option value="notavaliable">Not Available</option>
-                <option value="running">Running</option>
-              </select>
+              <label>Is Active</label>
+             <select name="is_active" className="form-control" value={formData.is_active} onChange={handleChange}>
+  <option value="available">Available</option>
+  <option value="rented">Currently Rented</option>
+  <option value="maintenance">Under Maintenance</option>
+  <option value="unavaliable">Unavaliable</option>
+</select>
             </div>
+            
 
             <div className="col-md-6 mb-3 d-flex align-items-end pb-2">
               <div className="form-check">
@@ -451,6 +530,51 @@ function OwnVehicles() {
                 </label>
               </div>
             </div>
+              <div className="col-md-6 mb-3 d-flex align-items-end pb-2">
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  name="has_gps"
+                  className="form-check-input"
+                  id="has_gps"
+                  checked={formData.has_gps}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="has_gps">
+                  Has GPS
+                </label>
+              </div>
+            </div>
+              <div className="col-md-6 mb-3 d-flex align-items-end pb-2">
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  name="has_music_system"
+                  className="form-check-input"
+                  id="has_music_system"
+                  checked={formData.has_music_system}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="has_music_system">
+                  Has Music System
+                </label>
+              </div>
+            </div>
+              <div className="col-md-6 mb-3 d-flex align-items-end pb-2">
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  name="has_bluetooth"
+                  className="form-check-input"
+                  id="has_bluetooth"
+                  checked={formData.has_bluetooth}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="has_bluetooth">
+                  Has Bluetooth
+                </label>
+              </div>
+            </div>
           </div>
 
          <div style={{ marginTop: '24px' }}>
@@ -461,7 +585,7 @@ function OwnVehicles() {
     {renderImageCard('Vehicle Back', 'vehicle_back', currentVehicleData?.vehicle_back)}
     {renderImageCard('Vehicle Seats Front', 'vehicle_seats_front', currentVehicleData?.vehicle_seats_front)}
     {renderImageCard('Vehicle Trumpt', 'vehicle_trumpat', currentVehicleData?.vehicle_trumpat)}
-    {renderImageCard('Vehicle Seats Back', 'vehicle_seats_back', currentVehicleData?.vehicle_seats_back)}
+    {renderImageCard('Vehicle Seats Back', 'vehicle_Seats_back', currentVehicleData?.vehicle_Seats_back)}
     {renderImageCard('Vehicle Front', 'vehicle_front', currentVehicleData?.vehicle_front)}
     {renderImageCard('RC Book', 'rc_book_image', currentVehicleData?.rc_book_image)}
     {renderImageCard('Insurance Image', 'insurance_image', currentVehicleData?.insurance_image)}

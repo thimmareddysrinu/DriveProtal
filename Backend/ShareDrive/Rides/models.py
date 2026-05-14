@@ -64,89 +64,86 @@ class VehiclePricingConfig(models.Model):
 
 # ─── Ride ────────────────────────────────────────────────────────────────────
 
+# rides/models.py
 class Ride(models.Model):
-    """
-    A single ride request by a customer. Stores start/end locations,
-    vehicle preference, calculated distance, and final price breakdown.
-    """
-
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ('pending_driver_confirmation', 'Pending Driver Confirmation'),
         ('driver_assigned', 'Driver Assigned'),
         ('driver_arrived', 'Driver Arrived'),
-        ('started', 'Ride Started'),
+        ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
-    ]
+    )
 
-    VEHICLE_TYPE_CHOICES = VehiclePricingConfig.VEHICLE_TYPE_CHOICES
-    RIDE_MODE_CHOICES    = VehiclePricingConfig.RIDE_MODE_CHOICES
+    BOOKING_FOR_CHOICES = (
+        ('self', 'Self'),
+        ('friend', 'Friend'),
+        ('family', 'Family'),
+        ('other', 'Other'),
+    )
 
-    # Participants
     customer = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'Customer.CustomerProfile',
         on_delete=models.CASCADE,
         related_name='rides'
+    )
+    passenger = models.ForeignKey(
+        'Customer.CustomerPassenger',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rides'
+    )
+
+    booking_for = models.CharField(max_length=20, choices=BOOKING_FOR_CHOICES, default='self')
+
+    driver = models.ForeignKey(
+        'Driver.DriverProfile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_rides'
     )
     driver_vehicle = models.ForeignKey(
         'Driver.DriverVehicle',
         on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='rides'
+        null=True,
+        blank=True
     )
 
-    # Locations
-    start_lat     = models.DecimalField(max_digits=9, decimal_places=6)
-    start_lon     = models.DecimalField(max_digits=9, decimal_places=6)
-    end_lat       = models.DecimalField(max_digits=9, decimal_places=6)
-    end_lon       = models.DecimalField(max_digits=9, decimal_places=6)
-    start_address = models.CharField(max_length=255, blank=True)
-    end_address   = models.CharField(max_length=255, blank=True)
+    start_address = models.TextField()
+    end_address = models.TextField()
+    start_lat = models.FloatField()
+    start_lon = models.FloatField()
+    end_lat = models.FloatField()
+    end_lon = models.FloatField()
 
-    # GIS points (optional — for spatial queries)
-    start_point = gis_models.PointField(geography=True, null=True, blank=True)
-    end_point   = gis_models.PointField(geography=True, null=True, blank=True)
+    vehicle_type = models.CharField(max_length=30)
+    ride_mode = models.CharField(max_length=20)
 
-    # Ride preferences
-    vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPE_CHOICES, default='car_mini')
-    ride_mode    = models.CharField(max_length=10, choices=RIDE_MODE_CHOICES, default='normal')
+    distance_km = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    base_fare = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ride_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    # Pricing breakdown (populated by LangGraph agent)
-    distance_km  = models.DecimalField(max_digits=8,  decimal_places=2, null=True, blank=True)
-    base_fare    = models.DecimalField(max_digits=8,  decimal_places=2, null=True, blank=True)
-    ride_price   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
-                                       help_text="Driver earnings portion")
-    tax_amount   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
-                                       help_text="Platform tax for website owner")
-    total_price  = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
-                                       help_text="Total amount paid by customer")
+    status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='pending_driver_confirmation')
+    driver_accepted_at = models.DateTimeField(null=True, blank=True)
 
-    # Status
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES,default='pending_driver_confirmation')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    driver = models.ForeignKey('Driver.DriverProfile', on_delete=models.CASCADE, null=True, blank=True)
-    driver_accepted_at = models.DateTimeField(null=True, blank=True)
-    
- 
-    
-
-    class Meta:
-        verbose_name = "Ride"
-        verbose_name_plural = "Rides"
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['vehicle_type', 'ride_mode']),
-        ]
 
     def __str__(self):
-        return (
-            f"Ride #{self.id} | {self.get_vehicle_type_display()} "
-            f"[{self.get_ride_mode_display()}] | {self.status} | "
-            f"₹{self.total_price}"
-        )
+        return f"Ride #{self.id} - {self.customer.user.phone_number}"
 
+    @property
+    def is_active_ride(self):
+        return self.status in [
+            'pending_driver_confirmation',
+            'driver_assigned',
+            'driver_arrived',
+            'ongoing',
+        ]
 
 # ─── Ride Tax Record ──────────────────────────────────────────────────────────
 

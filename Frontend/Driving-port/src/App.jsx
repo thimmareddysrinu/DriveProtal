@@ -19,7 +19,9 @@ import ProfilePage from './pages/DriverDashboard/ProfilePage.jsx'
 
 // Driver pages
 import DriverDashboard from './pages/DriverDashboard/DriverDashboard.jsx'
+import { APIProvider } from '@vis.gl/react-google-maps'
 
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 // Vehicle Owner pages
 import OwnerDashboard from './pages/OwnerDashboard/OwnerDashboard.jsx'
 import DemoREgister from './pages/RegisterPage/DemoREgister.jsx'
@@ -28,13 +30,19 @@ import Footer from './pages/Footer/Footer.jsx'
 import VehiclesWithMap from './pages/CustomerHome/VehicleGetting/VehiclesWithMap.jsx'
 import WaitForDriverAcceptance from './pages/CustomerHome/BookingProgress/WaitForDriverAcceptance.jsx'
 import AdminHome from './pages/Admin/AdminHome.jsx'
-import AdminVehicleApprovalPage from './pages/Admin/AdminVehicleApprovalPage.jsx'
+import AdminDriverVehicleApprovalPage from './pages/Admin/AdminDriverVehicleApprovalPage.jsx'
+import AdminOwnerVehicleApproval from './pages/Admin/AdminOwnerVehicleApproval.jsx'
 import OwnerProfilePage from './pages/OwnerDashboard/OwnerProfilePage.jsx'
+import AcceptedRide from './pages/CustomerHome/BookingProgress/AcceptedRide.jsx';
 
 function App() {
   const navigate=useNavigate()
   return (
     <>
+    <APIProvider
+      apiKey={GOOGLE_MAPS_API_KEY}
+      libraries={['places', 'routes']}
+    >
         <Navbar/>
     <>  
 
@@ -60,12 +68,15 @@ function App() {
         <Route path="/customer/profile"           element={<ProfilePage />} />
         <Route path='/customer/home/vehiclewithmap' element={<VehiclesWithMap/>}/>
           <Route path='/vehicleBooking/Progress' element={<WaitForDriverAcceptance/>}/>
+          <Route path='/ride-accepted' element={<AcceptedRide/>}/>
       </Route>
        <Route element={<RoleRoute allowedRoles={['admin']} />}>
-        <Route path="/admin/home"              element={<AdminHome />} />
+        
          <Route path="/admin/profile"              element={<ProfilePage />} />
-        <Route path="/admin/approval/:id" element={<AdminVehicleApprovalPage />} />
-       
+        
+      <Route path="/admin/home" element={<AdminHome />} />
+        <Route path="/admin/driver-approval/:id" element={<AdminDriverVehicleApprovalPage />} />
+        <Route path="/admin/owner-vehicle-approval/:id" element={<AdminOwnerVehicleApproval />} />
       </Route>
 
       {/* ── Driver Only Routes ── */}
@@ -88,6 +99,7 @@ function App() {
     </Routes>
     </>
     {/* <Footer/> */}
+       </APIProvider>
     
     </>
   

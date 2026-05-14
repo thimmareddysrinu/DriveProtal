@@ -13,7 +13,7 @@ class VehicleOwnerProfile(models.Model):
     )
 
     # Business details
-    full_name=models.CharField(max_length=100)
+    full_name=models.CharField(max_length=100,default=None,null=True)
     company_name = models.CharField(max_length=200, blank=True, null=True)
     business_license = models.CharField(max_length=100, blank=True, null=True)
     business_license_image = models.ImageField(
@@ -67,6 +67,7 @@ class VehicleRental(models.Model):
         ('mini', 'Mini Car'),
         ('hatchback', 'Hatchback'),
         ('luxury', 'Luxury Car'),
+         ('scooty', 'Scooty'),
 
     ]
     STATUS_CHOICES = [
@@ -115,7 +116,7 @@ class VehicleRental(models.Model):
         upload_to=vehicle_photo_upload_path, null=True, blank=True)
     vehicle_right = models.ImageField(
         upload_to=vehicle_photo_upload_path, null=True, blank=True)
-    Vehicle_left = models.ImageField(
+    vehicle_left = models.ImageField(
         upload_to=vehicle_photo_upload_path, null=True, blank=True)
     vehicle_back = models.ImageField(
         upload_to=vehicle_photo_upload_path, null=True, blank=True)
