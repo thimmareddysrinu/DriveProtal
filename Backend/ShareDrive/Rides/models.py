@@ -129,6 +129,7 @@ class Ride(models.Model):
 
     status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='pending_driver_confirmation')
     driver_accepted_at = models.DateTimeField(null=True, blank=True)
+    otp = models.CharField(max_length=4, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

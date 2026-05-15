@@ -200,6 +200,7 @@ function WaitForDriverAcceptance() {
   useEffect(() => {
     if (isDriverAssigned) {
       settomercount(0)
+      navigate('/ride-accepted')
       return
     }
 
@@ -244,12 +245,12 @@ function WaitForDriverAcceptance() {
     <div>
       {GOOGLE_MAPS_API_KEY ? (
         <div
-          className="d-flex flex-column-reverse flex-lg-row gap-4 p-4 "
+          className="d-flex flex-column-reverse flex-lg-row gap-4 gap-sm-1 p-1  "
           style={{ height: 'calc(100vh - 80px)', overflow: 'hidden' }}
         >
-          <div className="col-md-6 d-flex flex-column" style={{ height: '100%', minHeight: 0 }}>
+          <div className="col-md-6 d-flex flex-column pb-4" style={{ height: '100%', minHeight: 0 }}>
             <div
-              className="flex-grow-1 overflow-auto p-3"
+              className="flex-grow-1 overflow-auto p-3 p-sm-1"
               style={{ minHeight: 0, paddingBottom: '120px' }}
             >
               <div className="text-dark mb-5">
@@ -403,7 +404,7 @@ function WaitForDriverAcceptance() {
     <div className="row align-items-center">
       <div className="col-4 text-center">
         <img
-          src={activeRide.vehicle_image || 'https://via.placeholder.com/150'}
+          src={activeRide.driver_vehicle?.vehicle_front || 'https://via.placeholder.com/150'}
           alt="Vehicle"
           className="img-fluid"
           style={{
@@ -514,7 +515,7 @@ function WaitForDriverAcceptance() {
             </div>
 
             <div
-              className="bg-white shadow-lg border-top rounded-top-4 p-3 d-none d-md-block d-lg-block"
+              className="bg-white shadow-lg border-top rounded-top-4 p-5  d-none d-md-block d-lg-block"
               style={{ flexShrink: 0 }}
             >
               <div className="row g-2">

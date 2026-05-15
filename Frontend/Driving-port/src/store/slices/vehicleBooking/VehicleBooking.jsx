@@ -87,6 +87,48 @@ export const CheckRideStatus = createAsyncThunk(
   }
 )
 
+export const DriverArrived = createAsyncThunk(
+  'vehicle/driverArrived',
+  async (rideId, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.post(`${BaseUrl}/rides/${rideId}/arrive/`, {}, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('✅ Driver arrived response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to update arrived status' }
+      )
+    }
+  }
+)
+
+export const StartRide = createAsyncThunk(
+  'vehicle/startRide',
+  async ({ rideId, otp }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.post(`${BaseUrl}/rides/${rideId}/start/`, { otp }, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('✅ Ride started response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to start ride' }
+      )
+    }
+  }
+)
+
 const initialState = {
   bookingDetails: null,
   currentRide: null,

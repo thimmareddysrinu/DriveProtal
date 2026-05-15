@@ -16,9 +16,10 @@ import BookRidePage from './pages/BookRidePage/BookRidePage.jsx'
 import TrackingPage from './pages/TrackingPage/TrackingPage.jsx'
 import RideHistoryPage from './pages/RideHistoryPage/RideHistoryPage.jsx'
 import ProfilePage from './pages/DriverDashboard/ProfilePage.jsx'
-
+import CustomerProfilePage from './pages/CustomerHome/CustomerProfilePage.jsx'
 // Driver pages
 import DriverDashboard from './pages/DriverDashboard/DriverDashboard.jsx'
+import DriverRideView from './pages/DriverDashboard/DriverRideView.jsx'
 import { APIProvider } from '@vis.gl/react-google-maps'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -65,7 +66,7 @@ function App() {
         <Route path="/customer/book"              element={<BookRidePage />} />
         <Route path="/customer/tracking/:rideId"  element={<TrackingPage />} />
         <Route path="/customer/history"           element={<RideHistoryPage />} />
-        <Route path="/customer/profile"           element={<ProfilePage />} />
+        <Route path="/customer/profile"           element={<CustomerProfilePage />} />
         <Route path='/customer/home/vehiclewithmap' element={<VehiclesWithMap/>}/>
           <Route path='/vehicleBooking/Progress' element={<WaitForDriverAcceptance/>}/>
           <Route path='/ride-accepted' element={<AcceptedRide/>}/>
@@ -82,6 +83,7 @@ function App() {
       {/* ── Driver Only Routes ── */}
       <Route element={<RoleRoute allowedRoles={['driver']} />}>
         <Route path="/driver/dashboard" element={<DriverDashboard />} />
+        <Route path="/driver/ride"      element={<DriverRideView />} />
         <Route path="/driver/profile"   element={<ProfilePage />} />
       </Route>
 

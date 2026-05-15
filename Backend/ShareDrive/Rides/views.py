@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+import random
 
 from .models import VehiclePricingConfig, Ride
 from Driver.models import DriverProfile, DriverVehicle
@@ -338,7 +339,7 @@ class RideProccessingView(APIView):
             verification_status='approved',
             driver_ride_status='free',
             current_location__isnull=False,
-            current_location__distance_lte=(pickup_point, D(km=5))
+            current_location__distance_lte=(pickup_point, D(km=7))
         )
         print("Pickup point:", pickup_point)
         print("Pickup lat/lng:", pickup_lat, pickup_lng)
@@ -354,6 +355,7 @@ class RideProccessingView(APIView):
             "ride_mode": ride.ride_mode,
             "status": ride.status,
             "customer_name": getattr(ride.customer.user, "full_name", "") or getattr(ride.customer.user, "name", ""),
+            "customer_phone": getattr(ride.customer.user, "phone_number", ""),
             "customer_phone": getattr(ride.customer.user, "phone_number", ""),
             "distance_km": float(ride.distance_km),
             "price_breakdown": {
@@ -501,6 +503,11 @@ class RideAcceptedView(APIView):
                 driver_profile.driver_ride_status = 'onride'
                 driver_profile.save(update_fields=['driver_ride_status'])
 
+                # Generate 4-digit OTP
+                otp = f"{random.randint(1000, 9999)}"
+                ride.otp = otp
+                ride.save(update_fields=['otp'])
+
                 print(
                     "💾 Saving ride with values =>",
                     {
@@ -526,12 +533,18 @@ class RideAcceptedView(APIView):
                         "ride_mode": ride.ride_mode,
                         "pickup_address": ride.start_address,
                         "drop_address": ride.end_address,
+                        "otp": ride.otp,
+                        "start_lat": ride.start_lat,
+                        "start_lon": ride.start_lon,
+                        "end_lat": ride.end_lat,
+                        "end_lon": ride.end_lon,
                     },
                     "driver": {
                         "id": driver_profile.id,
                         "full_name": driver_profile.full_name if hasattr(driver_profile, 'full_name') else "",
                         "phone_number": driver_profile.user.phone_number if hasattr(driver_profile.user, 'phone_number') else "",
                         "name": driver_profile.full_name if hasattr(driver_profile, 'full_name') else "",
+                        "driver_image": request.build_absolute_uri(driver_profile.driver_image.url) if getattr(driver_profile, "driver_image", None) else None,
                     },
                     "driver_vehicle": {
                         "id": driver_vehicle.id,
@@ -591,13 +604,20 @@ class RideStatusAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, ride_id, format=None):
-        customer = _get_customer(request)
+        ride = get_object_or_404(Ride, id=ride_id)
 
-        ride = get_object_or_404(
-            Ride,
-            id=ride_id,
-            customer=customer
-        )
+        # Check authorization: user must be the customer OR the assigned driver
+        customer = _get_customer(request)
+        is_customer = customer == ride.customer
+        is_driver = False
+        try:
+            if hasattr(request.user, 'driver_profile'):
+                is_driver = ride.driver == request.user.driver_profile
+        except Exception:
+            pass
+
+        if not (is_customer or is_driver):
+            return Response({"error": "Ride not found."}, status=status.HTTP_404_NOT_FOUND)
 
         driver_data = None
         vehicle_data = None
@@ -608,6 +628,7 @@ class RideStatusAPIView(APIView):
                 "full_name": getattr(ride.driver.user, "full_name", None) or getattr(ride.driver.user, "name", None),
                 "phone_number": getattr(ride.driver.user, "phone_number", None),
                 "name": getattr(ride.driver.user, "name", None),
+                "driver_image": request.build_absolute_uri(ride.driver.driver_image.url) if getattr(ride.driver, "driver_image", None) else None,
             }
 
         if ride.driver_vehicle:
@@ -640,8 +661,87 @@ class RideStatusAPIView(APIView):
                 "drop_address": ride.end_address,
                 "ride_mode": ride.ride_mode,
                 "booking_for": ride.booking_for,
+                "otp": ride.otp,
+                "customer_name": getattr(ride.customer.user, "full_name", "") or getattr(ride.customer.user, "name", ""),
+                "customer_phone": getattr(ride.customer.user, "phone_number", ""),
+                "start_lat": ride.start_lat,
+                "start_lon": ride.start_lon,
+                "end_lat": ride.end_lat,
+                "end_lon": ride.end_lon,
             },
             "passenger": passenger_data,
             "driver": driver_data,
             "driver_vehicle": vehicle_data,
         }, status=status.HTTP_200_OK)
+
+class RideArrivedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, ride_id):
+        try:
+            ride = Ride.objects.get(id=ride_id, driver=request.user.driver_profile)
+        except Ride.DoesNotExist:
+            return Response({"success": False, "error": "Ride not found or you are not the driver."}, status=status.HTTP_404_NOT_FOUND)
+
+        if ride.status != 'driver_assigned':
+            return Response({"success": False, "error": f"Cannot arrive for ride with status: {ride.status}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        ride.status = 'driver_arrived'
+        ride.save(update_fields=['status'])
+
+        # Notify customer
+        try:
+            channel_layer = get_channel_layer()
+            customer_group = f"customer_{ride.customer.id}"
+            async_to_sync(channel_layer.group_send)(
+                customer_group,
+                {
+                    'type': 'ride_arrived',
+                    'message': 'Driver has arrived at your location.',
+                    'ride_id': ride.id,
+                }
+            )
+        except Exception as e:
+            print(f"WS notification error: {e}")
+
+        return Response({"success": True, "message": "Driver arrived successfully."})
+
+class StartRideView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, ride_id):
+        otp = request.data.get('otp')
+        if not otp:
+            return Response({"success": False, "error": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ride = Ride.objects.get(id=ride_id, driver=request.user.driver_profile)
+        except Ride.DoesNotExist:
+            return Response({"success": False, "error": "Ride not found or you are not the driver."}, status=status.HTTP_404_NOT_FOUND)
+
+        if ride.status not in ['driver_assigned', 'driver_arrived']:
+            return Response({"success": False, "error": f"Cannot start ride with status: {ride.status}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(ride.otp) != str(otp):
+            return Response({"success": False, "error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        ride.status = 'ongoing'
+        ride.save(update_fields=['status'])
+
+        # Notify customer
+        try:
+            channel_layer = get_channel_layer()
+            customer_group = f"customer_{ride.customer.id}"
+            async_to_sync(channel_layer.group_send)(
+                customer_group,
+                {
+                    'type': 'ride_started',
+                    'message': 'Your ride has started.',
+                    'ride_id': ride.id,
+                }
+            )
+        except Exception as e:
+            print(f"WS notification error: {e}")
+
+        return Response({"success": True, "message": "Ride started successfully."})
+

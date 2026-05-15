@@ -40,6 +40,8 @@ class DriverProfile(models.Model):
         choices=DRIVER_RIDE_STATUS_CHOICES, 
         default='free'
     )
+    driver_image = models.ImageField(upload_to='drivers/profilepicture/', null=True, blank=True)
+    
     aadhar_number = models.CharField(max_length=12, blank=True, null=True)
     aadhar_image = models.ImageField(upload_to='drivers/aadhar/', null=True, blank=True)
     pan_number = models.CharField(max_length=10, blank=True, null=True)

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { FaStar, FaRupeeSign } from 'react-icons/fa'
 import { useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { DriverAcceptVehicleBooking,CheckRideStatus } from '../../store/slices/vehicleBooking/VehicleBooking'
 
 const DriverDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'))
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const wsRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -293,6 +295,9 @@ const DriverDashboard = () => {
         type: 'ride_accept_ack',
         ride_id: ride.ride_id,
       })
+      
+      // Navigate to active ride tracking view
+      navigate('/driver/ride')
     } catch (error) {
       console.error('❌ Ride acceptance failed:', error)
       alert(error?.error || error?.message || 'Ride acceptance failed')
