@@ -35,6 +35,8 @@ import AdminDriverVehicleApprovalPage from './pages/Admin/AdminDriverVehicleAppr
 import AdminOwnerVehicleApproval from './pages/Admin/AdminOwnerVehicleApproval.jsx'
 import OwnerProfilePage from './pages/OwnerDashboard/OwnerProfilePage.jsx'
 import AcceptedRide from './pages/CustomerHome/BookingProgress/AcceptedRide.jsx';
+import CustomerAllRides from './pages/CustomerHome/CustomerAllRides.jsx';
+
 
 function App() {
   const navigate=useNavigate()
@@ -70,6 +72,7 @@ function App() {
         <Route path='/customer/home/vehiclewithmap' element={<VehiclesWithMap/>}/>
           <Route path='/vehicleBooking/Progress' element={<WaitForDriverAcceptance/>}/>
           <Route path='/ride-accepted' element={<AcceptedRide/>}/>
+            <Route path='/customer/AllRides' element={<CustomerAllRides/>}/>
       </Route>
        <Route element={<RoleRoute allowedRoles={['admin']} />}>
         

@@ -1,0 +1,37 @@
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.1
+drf-yasg>=1.21.7
+
+# Database
+psycopg2-binary>=2.9.9
+django-environ>=0.11.2
+
+
+# Channels (WebSockets)
+channels>=4.0.0
+daphne>=4.0.0
+channels-redis>=4.1.0
+
+# Tasks and Caching
+celery>=5.3.6
+redis>=5.0.1
+
+# Authentication
+djangorestframework-simplejwt>=5.3.1
+
+# AI and ML
+langchain>=0.1.13
+langchain-openai>=0.1.1
+langgraph>=0.0.30
+scikit-learn>=1.4.1.post1
+
+# Geospatial Processing
+# Note: Requires GDAL on the system for PostGIS integration
+# GDAL==3.10.0 (removed to avoid pip compilation issues in Docker; GeoDjango loads system-level GDAL via ctypes)
+djangorestframework-gis
+
+# Misc Utilities
+Pillow>=10.2.0
+pytz>=2024.1
+gunicorn>=21.2.0

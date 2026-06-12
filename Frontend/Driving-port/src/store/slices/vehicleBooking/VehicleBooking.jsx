@@ -32,7 +32,7 @@ export const VehicleBooking = createAsyncThunk(
       console.log('✅ Booking response from backend:', res.data)
       return res.data
     } catch (err) {
-      return rejectWithValue(err.response?.data || { message: 'Booking Failed' })
+      return rejectWithValue(err.response?.data || { message: 'srinu Booking Failed' })
     }
   }
 )
@@ -128,12 +128,76 @@ export const StartRide = createAsyncThunk(
     }
   }
 )
+export const CancelledRide = createAsyncThunk(
+  'vehicle/cancelledRide',
+  async ({ rideId, otp }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.post(`${BaseUrl}/rides/cancelled/${rideId}/ride/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('✅ Ride cancelled response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to cancel ride' }
+      )
+    }
+  }
+)
+export const CompletedRide = createAsyncThunk(
+  'vehicle/completedRide',
+  async ({ rideId}, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.post(`${BaseUrl}/rides/completed/${rideId}/ride/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('✅ Ride completed response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to complete ride' }
+      )
+    }
+  }
+)
+export const CustomerAllRide = createAsyncThunk(
+  'vehicle/customerAllRides',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access')
+      const res = await axios.get(`${BaseUrl}/rides/customer/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      console.log('✅ Customer all rides response:', res.data)
+      return res.data
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data || { message: 'Failed to fetch customer rides' }
+      )
+    }
+  }
+)
+
+     
+
 
 const initialState = {
   bookingDetails: null,
   currentRide: null,
   currentDriver: null,
   currentVehicle: null,
+  CustomerRides: [],
   loading: false,
   error: null,
 }
@@ -179,6 +243,21 @@ const VehicleBookingSlice = createSlice({
         state.loading = false
         state.error = action.payload || action.error?.message
       })
+
+       .addCase(CustomerAllRide.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(CustomerAllRide.fulfilled, (state, action) => {
+        state.loading = false
+        state.CustomerRides = action.payload
+        state.error = null
+      })
+      .addCase(CustomerAllRide.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload || action.error?.message
+      })
+       
   },
 })
 

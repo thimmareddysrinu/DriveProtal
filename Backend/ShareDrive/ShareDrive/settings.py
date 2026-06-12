@@ -101,9 +101,8 @@ import platform
 
 if platform.system() == "Windows":
     os.add_dll_directory(r"C:\OSGeo4W\bin")
-
-GDAL_LIBRARY_PATH = r"C:\OSGeo4W\bin\gdal312.dll"
-GEOS_LIBRARY_PATH = r"C:\OSGeo4W\bin\geos_c.dll"
+    GDAL_LIBRARY_PATH = r"C:\OSGeo4W\bin\gdal312.dll"
+    GEOS_LIBRARY_PATH = r"C:\OSGeo4W\bin\geos_c.dll"
 
 
 ASGI_APPLICATION = 'ShareDrive.asgi.application'  # your_project name

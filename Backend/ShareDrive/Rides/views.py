@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 import random
-
+from Customer.models import CustomerProfile
 from .models import VehiclePricingConfig, Ride
 from Driver.models import DriverProfile, DriverVehicle
 from .serializers import (
@@ -744,4 +744,35 @@ class StartRideView(APIView):
             print(f"WS notification error: {e}")
 
         return Response({"success": True, "message": "Ride started successfully."})
+
+
+class RideCancelledView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,ride_id):
+        try:
+            ride=Ride.objects.get(id=ride_id,customer=CustomerProfile.objects.get(user=request.user))
+            ride.status='cancelled'
+            ride.save(update_fields=['status'])
+
+        except Ride.DoesNotExist:
+            return Response({
+                "success":False,
+                "error":"Ride not found or you are not the customer."
+            },status=status.HTTP_404_NOT_FOUND)
+               
+class RideCompletedView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,ride_id):
+        try:
+            ride=Ride.objects.get(id=ride_id,customer=CustomerProfile.objects.get(user=request.user))
+            ride.status='completed'
+            ride.save(update_fields=['status'])
+
+        except Ride.DoesNotExist:
+            return Response({
+                "success":False,
+                "error":"Ride not found or you are not the customer."
+            },status=status.HTTP_404_NOT_FOUND)
+               
+
 

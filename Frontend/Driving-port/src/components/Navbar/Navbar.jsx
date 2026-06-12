@@ -58,6 +58,12 @@ function Navbar() {
                     Profile
                   </Link>
                 </li>
+               
+                <li>
+                  <Link className="dropdown-item" to="/customer/AllRides">
+                    All Rides
+                  </Link>
+                </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
                   <button className="dropdown-item text-danger" onClick={handleLogout}>

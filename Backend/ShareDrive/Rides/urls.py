@@ -10,4 +10,6 @@ urlpatterns = [
          path('status/<int:ride_id>/', RideStatusAPIView.as_view(), name='ride-status'),
          path('<int:ride_id>/arrive/', RideArrivedView.as_view(), name='ride-arrive'),
          path('<int:ride_id>/start/', StartRideView.as_view(), name='ride-start'),
+           path('cancelled/<int:ride_id>/ride/', RideCancelledView.as_view(), name='ride-cancelled'),
+           path('completed/<int:ride_id>/ride/', RideCompletedView.as_view(), name='ride-completed'),
 ]
